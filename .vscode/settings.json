@@ -1,0 +1,10 @@
+{
+    "java.project.sourcePaths": [
+        "Connect",
+        "tyl224"
+    ],
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "tyl224/ojdbc8.jar"
+    ]
+}
