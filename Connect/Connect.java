@@ -23,6 +23,38 @@ public class Connect {
                 conn = DriverManager.getConnection(DB_URL, user, pass);
                 System.out.println("Connection successful!\n");
 
+                // switch case for which interface to access
+                System.out.println("Select the interface you would like to use: ");
+                System.out.println("1. Property Manager");
+                System.out.println("2. Tenant");
+                System.out.println("3. NUMA Manager");   
+                
+                // get user's choice for interface
+                int choice = Integer.parseInt(in.nextLine());
+                switch (choice) {
+                    case 1:
+                        System.out.println("----Property Manager Interface----");
+                        // call to property manager class
+                        break;
+
+                    case 2:
+                        System.out.println("----Tenant----");
+                        // call to tenant class
+                        break;
+                    
+                    case 3:
+                        System.out.println("----NUMA Manager----");
+                        // call to manager class
+                        break;
+                    
+                    default:
+                        System.out.println("Please make a proper selection (1-3).");
+                        System.out.println("1. Property Manager");
+                        System.out.println("2. Tenant");
+                        System.out.println("3. NUMA Manager");
+                        break;
+                }
+
                 conn.close();
 
             }
