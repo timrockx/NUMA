@@ -1,7 +1,9 @@
 {
     "java.project.sourcePaths": [
+        "tyl224",
+        "Manager",
         "Connect",
-        "tyl224"
+        "dbtableprinter-master"
     ],
     "java.project.referencedLibraries": [
         "lib/**/*.jar",

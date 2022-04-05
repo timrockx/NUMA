@@ -1,6 +1,7 @@
 import java.sql.*;
 import java.util.*;
 
+
 public class Connect {
 
     // static string for link to database
@@ -34,16 +35,17 @@ public class Connect {
                 switch (choice) {
                     case 1:
                         System.out.println("----Property Manager Interface----");
+                        Manager.managerInterface();
                         // call to property manager class
                         break;
 
                     case 2:
-                        System.out.println("----Tenant----");
+                        System.out.println("----Tenant Interface----");
                         // call to tenant class
                         break;
                     
                     case 3:
-                        System.out.println("----NUMA Manager----");
+                        System.out.println("----NUMA Manager Interface----");
                         // call to manager class
                         break;
                     
