@@ -34,18 +34,23 @@ public class Connect {
                 int choice = Integer.parseInt(in.nextLine());
                 switch (choice) {
                     case 1:
-                        System.out.println("----Property Manager Interface----");
-                        Manager.managerInterface();
+                        System.out.print("\033\143");
+                        System.out.println("------Property Manager Interface------");
                         // call to property manager class
+                        Manager.managerInterface();
+                        
                         break;
 
                     case 2:
-                        System.out.println("----Tenant Interface----");
+                        System.out.print("\033\143");
+                        System.out.println("------Tenant Interface------");
                         // call to tenant class
+                        Tenant.tenantInterface();
                         break;
                     
                     case 3:
-                        System.out.println("----NUMA Manager Interface----");
+                        System.out.print("\033\143");
+                        System.out.println("------NUMA Manager Interface------");
                         // call to manager class
                         break;
                     
