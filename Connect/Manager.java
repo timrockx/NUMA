@@ -1,10 +1,5 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.Scanner;
+import java.sql.*;
+import java.util.*;
 
 public class Manager {
     
@@ -25,21 +20,30 @@ public class Manager {
 
                 // attempt connection to database
                 conn = DriverManager.getConnection(DB_URL, user, pass);
+                // on successful connection, clear console
+                System.out.print("\033\143");
+                System.out.println("Welcome to the NUMA Property Manager Interface!");
+                
                 int choice;
 
                 do {
                     // interface menu
-                    System.out.println("What actions would you like to complete today?");
-                    System.out.println("1: View all property listings.");
-                    System.out.println("2: View all apartments of a property listing.");
-                    System.out.println("0: Exit Program");
+                    System.out.println("Please select an option below:");
+                    System.out.println("\t1: View all property listings.");
+                    System.out.println("\t2: View all apartments of a property.");
+                    System.out.println("\t3: View all apartments available for rent.");
+                    System.out.println("\t0: Exit");
 
-                    // switch through choices
+                    // switch through choice
                     choice = Integer.parseInt(in.nextLine());
                     switch (choice) {
+                        case 0:
+                            // quit program
+                            break;
+
                         case 1:
                             // execute query to return ALL property listings
-                            System.out.println("Here is a list of all property listings in the area.\n");
+                            System.out.println("All property listings in the area:\n");
                             String propertyQuery = "select * from property";
                             PreparedStatement pStmt = conn.prepareStatement(propertyQuery);
 
@@ -58,16 +62,18 @@ public class Manager {
                             break;
 
                         case 2:
-                            System.out.println("Enter the property ID of the property you would like to view.");
+                            // display all apartments related to a single property
+                            System.out.println("Enter the ID of the property you would like to view.");
                             int pID = Integer.parseInt(in.nextLine());
+                            System.out.println("All apartments at Property " + pID + ": \n");
                             
                             // create query to search for all apartments in given property
                             String aptQuery = "select * from apartment where p_id = ?";
                             PreparedStatement pStmt2 = conn.prepareStatement(aptQuery);
                             pStmt2.setInt(1, pID);
 
-                        ResultSet rs2 = pStmt2.executeQuery();
-                        ResultSetMetaData rsmd2 = rs2.getMetaData();
+                            ResultSet rs2 = pStmt2.executeQuery();
+                            ResultSetMetaData rsmd2 = rs2.getMetaData();
                             int colNum = rsmd2.getColumnCount();
 
                             // print result set
@@ -81,19 +87,24 @@ public class Manager {
                             break;
                             
                         case 3:
-                            System.out.println("----NUMA Manager Interface----");
-                            // call to manager class
+                            // display all apartments available for rent
+                            System.out.println("Enter the ID of the property you'd like to view.");
+                            pID = Integer.parseInt(in.nextLine());
+                            System.out.println("All apartments available for rent at Property " + pID + ": \n");
+
+                            // create query to search for apartments
+
                             break;
                         
                         default:
                             System.out.println("Please make a proper selection (1-3).");
-                            System.out.println("1. Property Manager");
-                            System.out.println("2. Tenant");
-                            System.out.println("3. NUMA Manager");
+                            System.out.println("1: View all property listings.");
+                            System.out.println("2: View all apartments of a property.");
+                            System.out.println("3: View all available leases of a property.");
+                            System.out.println("0: Exit");
                             break;
                     }
                 } while (choice != 0);
-
             }
             catch (SQLException sqle) {
                 // sqle.printStackTrace();
@@ -102,5 +113,7 @@ public class Manager {
         } while (conn == null);
 
     }
+
+
 
 }
