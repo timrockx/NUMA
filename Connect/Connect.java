@@ -37,7 +37,7 @@ public class Connect {
                         System.out.print("\033\143");
                         System.out.println("------Property Manager Interface------");
                         // call to property manager class
-                        Manager.managerInterface();
+                        Manager.managerInterface(conn);
                         
                         break;
 
@@ -45,7 +45,7 @@ public class Connect {
                         System.out.print("\033\143");
                         System.out.println("------Tenant Interface------");
                         // call to tenant class
-                        Tenant.tenantInterface();
+                        Tenant.tenantInterface(conn);
                         break;
                     
                     case 3:
