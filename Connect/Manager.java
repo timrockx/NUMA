@@ -5,9 +5,7 @@ public class Manager {
     
     public static void managerInterface(Connection conn) {
 
-        // final String DB_URL = "jdbc:oracle:thin:@edgar1.cse.lehigh.edu:1521:cse241";
-        // instantiate connection and scanner
-        // Connection conn = null;
+        // instantiate scanner
         Scanner in = new Scanner(System.in);
 
         do {
@@ -24,12 +22,15 @@ public class Manager {
                     System.out.println("\t2: View all apartments of a property.");
                     System.out.println("\t3: View all apartments available for rent.");
                     System.out.println("\t0: Exit");
-
                     // switch through choice
                     choice = Integer.parseInt(in.nextLine());
+
                     switch (choice) {
                         case 0:
-                            // quit program
+                            // quit program - display exit message
+                            System.out.println("Thanks for using the NUMA Property Manager Interface!");
+                            System.out.println("Exiting...");
+                            System.out.print("\033\143");
                             break;
 
                         case 1:
