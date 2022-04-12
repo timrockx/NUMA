@@ -1,73 +1,144 @@
 import java.sql.*;
+import java.sql.Date;
 import java.util.*;
 
 public class Tenant {
 
+    // add a payment method to a tenant's account
     public static void addPayment(Connection conn, int tenant_id) {
         Scanner in = new Scanner(System.in);
+        boolean paymentSet = false;
 
-        try {
-            System.out.println("What payment method would you like to use?");
-            System.out.println("\t1: Credit Card (CC)");
-            System.out.println("\t2: Venmo (V)");
-            System.out.println("\t2: Cash (C)");
+        do {
+            try {
+                System.out.println("What payment method would you like to use?");
+                System.out.println("\t1: Credit Card (CC)");
+                System.out.println("\t2: Venmo (V)");
+                System.out.println("\t2: Cash (C)");
+    
+                int method = Integer.parseInt(in.nextLine());
 
-            String method = in.nextLine();
-            if(method.equalsIgnoreCase("cc")) {
-                System.out.println("Enter the Credit Card Number: ");
-                String ccNum = in.nextLine();
-                System.out.println("Enter the Expiration Date: (MM/YY) ");
-                String expDate = in.nextLine();
-                System.out.println("Enter the CVV: (XXX)");
-                String cvv = in.nextLine();
+                switch(method) {
+                    // add credit card
+                    case 1:
+                        System.out.println("Enter the Credit Card Number: ");
+                        String ccNum = in.nextLine();
+                        System.out.println("Enter the Expiration Date: (MM/YY) ");
+                        String expDate = in.nextLine();
+                        System.out.println("Enter the CVV: (XXX)");
+                        String cvv = in.nextLine();
+        
+                        String ccQuery = "insert into payment (tenant_id, method, cc_num, exp_date, cvv) values (?, ?, ?, ?, ?)";
+                        PreparedStatement pStmt = conn.prepareStatement(ccQuery);
+                        // set arguments for cc info
+                        pStmt.setInt(1, tenant_id);
+                        pStmt.setString(2, ccNum);
+                        pStmt.setString(3, expDate);
+                        pStmt.setString(4, cvv);
+        
+                        int rowsChanged = pStmt.executeUpdate();
+                        if(rowsChanged == 1) {
+                            System.out.println("Payment added successfully!");
+                            paymentSet = true;
+                        }
+                        else {
+                            System.out.println("[Error]: Payment failed to add. Please login to our portal and try again.");
+                            paymentSet = true;
+                        }
+                        break;
 
-                String ccQuery = "insert into payment (tenant_id, method, cc_num, exp_date, cvv) values (?, ?, ?, ?, ?)";
-                PreparedStatement pStmt = conn.prepareStatement(ccQuery);
-                // set arguments for cc info
-                pStmt.setInt(1, tenant_id);
-                pStmt.setString(2, ccNum);
-                pStmt.setString(3, expDate);
-                pStmt.setString(4, cvv);
+                    // add venmo
+                    case 2:
+                        System.out.println("What is your venmo username? ");
+                        String vUser = in.nextLine();
+        
+                        String vQuery = "insert into payment (tenant_id, method, venmo_user) values (?, ?, ?)";
+                        PreparedStatement pStmt1 = conn.prepareStatement(vQuery);
+                        // set arguments for venmo account
+                        pStmt1.setInt(1, tenant_id);
+                        pStmt1.setString(2, vUser);
+        
+                        rowsChanged = pStmt1.executeUpdate();
+                        if (rowsChanged == 1) {
+                            System.out.println("Payment added successfully!");
+                            paymentSet = true;
+                        } else {
+                            System.out.println("Payment failed to add. Please go through our portal again and try again.");
+                        }
+                        break;
 
-                int rowsChanged = pStmt.executeUpdate();
-                if(rowsChanged == 1) {
-                    System.out.println("Payment added successfully!");
-                }
-                else {
-                    System.out.println("Payment failed to add. Please go through our portal again and try again.");
-                }
+                    // use cash
+                    case 3:
+                        System.out.println("Your default payment method is now set to be CASH.");
+                        paymentSet = true;
+                        break;
 
-            } else if(method.equalsIgnoreCase("v")) {
-                // gather venmo info
-                System.out.println("What is your venmo username? ");
-                String vUser = in.nextLine();
-
-                String vQuery = "insert into payment (tenant_id, method, venmo_user) values (?, ?, ?)";
-                PreparedStatement pStmt1 = conn.prepareStatement(vQuery);
-                // set arguments for venmo account
-                pStmt1.setInt(1, tenant_id);
-                pStmt1.setString(2, vUser);
-
-                int rowsChanged = pStmt1.executeUpdate();
-                if (rowsChanged == 1) {
-                    System.out.println("Payment added successfully!");
-                } else {
-                    System.out.println("Payment failed to add. Please go through our portal again and try again.");
-                }
-
-            } else if(method.equalsIgnoreCase("c")) {
-                // set payMethod to cash for tenant
-                System.out.println("Cash will be used for this, and any future payments.");
-
-            } else {
-                // invalid input
-                System.out.println("Invalid input. Please try again.");
+                    // invalid input
+                    default:
+                        System.out.println("[Error]: Invalid input. Please try again.");
+                        System.out.println("\t1: Credit Card (CC)");
+                        System.out.println("\t2: Venmo (V)");
+                        System.out.println("\t2: Cash (C)");
+                        break;
+                } 
             }
-        }
-        catch (SQLException sqle) {
-            System.out.println("[Error]: Connect error. Please try again.");
-            sqle.printStackTrace();
-        }        
+            catch (SQLException sqle) {
+                System.out.println("[Error]: Connect error. Please try again.");
+                sqle.printStackTrace();
+            }        
+        } while(paymentSet == false);
+    }
+
+
+    public static void makePayment(Connection conn, int tenant_id) {
+        Scanner in = new Scanner(System.in);
+        boolean paymentMade = false;
+
+        // iterate while payment has not been made
+        do {
+            try {
+
+                // get late payments OR find tenant's monthly rent somehow
+    
+                System.out.println("You have a payment of $XYZ due at the end of the month. Would you like to pay now? (y/n) ");
+                String payNow = in.nextLine();
+                if(payNow.equalsIgnoreCase("y")) {
+                    // add to payment history
+                    String payQuery = "insert into payment_history (transaction_id, tenant_id, amount, date) values (?, ?, ?, ?)";
+                    PreparedStatement pStmt = conn.prepareStatement(payQuery);
+                    // set arguments of query
+                    pStmt.setInt(1, 1);
+                    pStmt.setInt(2, tenant_id);
+                    pStmt.setInt(3, 350);
+                    pStmt.setDate(4, new Date(System.currentTimeMillis()));
+
+                    // check resultset, then change paymentMade variable
+                    int rowsChanged = pStmt.executeUpdate();
+                    if(rowsChanged == 1) {
+                        System.out.println("[Thank You]: Payment made successfully!");
+                        paymentMade = true;
+                    } else {
+                        System.out.println("[Error]: Issue with payment method. Please login and try again.");
+                        paymentMade = true; // true just to quit loop
+                    }
+
+                } else if(payNow.equalsIgnoreCase("n")) {
+                    // print warning message, but do nothing
+                    System.out.println("[REMINDER]: If you do not pay by the end of the month, you will be charged a late fee of $100.");
+                    System.out.println("Exiting Interface Now... If you choose to make a payment you must login again.");
+                    paymentMade = true; // exit loop and quit
+                } else {
+                    // invalid input
+                    System.out.println("Please enter either (y/n) as a proper response.");
+                    System.out.println("You have a payment of $XYZ due at the end of the month. Would you like to pay now? (y/n) ");
+                }
+
+            }
+            catch(SQLException sqle) {
+                System.out.println("[Error]: Connect error. Please try again.");
+                sqle.printStackTrace();
+            }
+        } while(paymentMade == false);
     }
 
 
@@ -109,9 +180,19 @@ public class Tenant {
                             ResultSet rs1 = pStmt.executeQuery();
                             ResultSetMetaData rsmd1 = rs1.getMetaData();
 
+                            // if payment method is not set, set it
                             if(rs1.next() == false) {
                                 System.out.println("You do not have a payment method on file. Would you like to add one? (y/n)");
+                                String answer = in.nextLine();
+                                if(answer.equalsIgnoreCase("y")) {
+                                    // add payment method
+                                    addPayment(conn, t_id);
+                                }
+                                else {
+                                    System.out.println("A payment method is required before making a payment. Please try again.");
+                                }
 
+                            // if payment method is set, we retrieve then use it to pay
                             } else {
                                 // get payment method
                                 String payMethod = rs1.getString(2);
@@ -119,12 +200,12 @@ public class Tenant {
                                 String option = in.nextLine();
                                 if(option.equalsIgnoreCase("y")) {
                                     // process payment with payMethod
-                                    System.out.println("You have a payment for $300 due at the end of this month. Would you like to pay now? (y/n) ");
+                                    makePayment(conn, t_id);
+                                    
                                 } else if(option.equalsIgnoreCase("n")) {
                                     // call addPayment method passing in DB connection and tennat id
                                     addPayment(conn, t_id);
                                 }
-
                             }
 
                             pStmt.close();
