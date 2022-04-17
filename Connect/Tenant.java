@@ -15,12 +15,12 @@ public class Tenant {
                 System.out.println("\t1: Credit Card (CC)");
                 System.out.println("\t2: Venmo (V)");
                 System.out.println("\t2: Cash (C)");
-    
                 int method = Integer.parseInt(in.nextLine());
 
                 switch(method) {
                     // add credit card
                     case 1:
+                        // get credit card info from user
                         System.out.println("Enter the Credit Card Number: ");
                         String ccNum = in.nextLine();
                         System.out.println("Enter the Expiration Date: (MM/YY) ");
@@ -28,6 +28,7 @@ public class Tenant {
                         System.out.println("Enter the CVV: (XXX)");
                         String cvv = in.nextLine();
         
+                        // query with info
                         String ccQuery = "insert into payment (tenant_id, method, cc_num, exp_date, cvv) values (?, ?, ?, ?, ?)";
                         PreparedStatement pStmt = conn.prepareStatement(ccQuery);
                         // set arguments for cc info
@@ -36,6 +37,7 @@ public class Tenant {
                         pStmt.setString(3, expDate);
                         pStmt.setString(4, cvv);
         
+                        // check output, must change 1 row to be successful
                         int rowsChanged = pStmt.executeUpdate();
                         if(rowsChanged == 1) {
                             System.out.println("Payment added successfully!");
@@ -49,15 +51,18 @@ public class Tenant {
 
                     // add venmo
                     case 2:
+                        // get venmo info from user
                         System.out.println("What is your venmo username? ");
                         String vUser = in.nextLine();
         
+                        // form venmo query
                         String vQuery = "insert into payment (tenant_id, method, venmo_user) values (?, ?, ?)";
                         PreparedStatement pStmt1 = conn.prepareStatement(vQuery);
                         // set arguments for venmo account
                         pStmt1.setInt(1, tenant_id);
                         pStmt1.setString(2, vUser);
         
+                        // check output for success
                         rowsChanged = pStmt1.executeUpdate();
                         if (rowsChanged == 1) {
                             System.out.println("Payment added successfully!");
@@ -97,9 +102,7 @@ public class Tenant {
         // iterate while payment has not been made
         do {
             try {
-
                 // get late payments OR find tenant's monthly rent somehow
-    
                 System.out.println("You have a payment of $XYZ due at the end of the month. Would you like to pay now? (y/n) ");
                 String payNow = in.nextLine();
                 if(payNow.equalsIgnoreCase("y")) {
@@ -124,12 +127,12 @@ public class Tenant {
 
                 } else if(payNow.equalsIgnoreCase("n")) {
                     // print warning message, but do nothing
-                    System.out.println("[REMINDER]: If you do not pay by the end of the month, you will be charged a late fee of $100.");
+                    System.out.println("[Reminder]: If you do not pay by the end of the month, you will be charged a late fee of $100.");
                     System.out.println("Exiting Interface Now... If you choose to make a payment you must login again.");
                     paymentMade = true; // exit loop and quit
                 } else {
                     // invalid input
-                    System.out.println("Please enter either (y/n) as a proper response.");
+                    System.out.println("[Error]: Please enter either (y/n) as a proper response.");
                     System.out.println("You have a payment of $XYZ due at the end of the month. Would you like to pay now? (y/n) ");
                 }
 
@@ -142,8 +145,41 @@ public class Tenant {
     }
 
 
+    public static void moveOut(Connection conn, int tenant_id) {
+        
+        try {
+             // delete tenant from lives_in table
+            String deleteLivesInQ = "delete from lives_in where tenant_id = ?";
+            PreparedStatement pStmt1 = conn.prepareStatement(deleteLivesInQ);
+            pStmt1.setInt(1, tenant_id);
+            int deletedRows = pStmt1.executeUpdate();
+            if(deletedRows == 1) {
+                System.out.println("[Success]: You have successfully moved out of your apartment.");
+            }
 
-   public static void tenantInterface(Connection conn) {
+            // delete tenant from specific payment, then payment table
+
+            // delete tenant from tenant table
+            // String deleteTenantQ = "delete from tenant where tenant_id = ?";
+            // PreparedStatement pStmt2 = conn.prepareStatement(deleteTenantQ);
+            // pStmt2.setInt(1, tenant_id);
+            // deletedRows = pStmt2.executeUpdate();
+            // if(deletedRows == 1) {
+            //     System.out.println("[Success]: You have successfully moved out of your apartment.");
+            // }
+
+
+        }
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Connect error. Please try again.");
+            sqle.printStackTrace();
+        }
+       
+
+    }
+
+
+    public static void tenantInterface(Connection conn) {
         // instantiate scanner
         Scanner in = new Scanner(System.in);
 
@@ -151,7 +187,7 @@ public class Tenant {
             try {
                  // on successful connection, clear console
                  System.out.print("\033\143");
-                 System.out.println("Welcome to the NUMA Tenant Interface!");
+                 System.out.println("Welcome to the NUMA Tenant Interface!\n");
 
                  System.out.println("Enter your tenant ID to login: ");
                  int t_id = Integer.parseInt(in.nextLine());
@@ -205,6 +241,8 @@ public class Tenant {
                                 } else if(option.equalsIgnoreCase("n")) {
                                     // call addPayment method passing in DB connection and tennat id
                                     addPayment(conn, t_id);
+                                    // after setting payment method, make payment
+                                    makePayment(conn, t_id);
                                 }
                             }
 
@@ -246,25 +284,24 @@ public class Tenant {
                         case 3: // move out / cancel lease
                             System.out.println("Please confirm you would like to move out of your apartment (y/n): ");
                             String confirm = in.nextLine(); 
-                            if(confirm.length() > 1) {
-                                System.out.println("Please enter y or n.");
+                            // validate input
+                            if(confirm.equalsIgnoreCase("y")) {
+                                // move out
+                                System.out.println("[Note]: All tenant information will be deleted upon move out.");
+                                System.out.println("[Moving out...]");
+                                moveOut(conn, t_id);
+                                break;
+
+                            } else if(confirm.equalsIgnoreCase("n")) {
+                                System.out.println("Reverting to previous menu...");
+
                             } else {
-                                if(confirm.equals("y")) {
-                                    // move out
-                                    System.out.println("Moving out...");
-
-                                } else if(confirm.equals("n")) {
-                                    System.out.println("Reverting to previous menu...");
-
-                                } else {
-                                    System.out.println("Please enter an appropriate choice (y/n): ");;
-                                }
+                                System.out.println("Please enter an appropriate choice (y/n): ");;
                             }
-
                             break;
                         
                         default:
-                            System.out.println("Please make a proper selection (1-3).");
+                            System.out.println("[Error]: Please make a proper selection: ");
                             System.out.println("\t1: Make a payment.");
                             System.out.println("\t2: Add a roomate.");
                             System.out.println("\t3: Move out.");
@@ -280,9 +317,6 @@ public class Tenant {
 
         } while (conn == null);
         
-
-
-
    }
 
 }
