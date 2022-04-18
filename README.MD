@@ -12,20 +12,20 @@
 - payment history table
 - view amenities functionality?
 - prospective tenants?
+- changing payment method has to be different than adding a payment method
 
 
 ### Functionality:
 
 #### Tenant Interface
 - Login using a tenant_id of any integer (1-8)
-- Notes:
-  - The program will validate that the tenant id is in the database
+- Interface Notes:
   - Every tenant is currently assigned to a lease for an apartment
   - Tenants have the following functionality: 
-    - Make payments on their lease
-    - Add roommates to their apartment
-    - Cancel/move out of their apartment
-    - View all amenities their apartment/property offers
+    - Make payments on their lease (working)
+    - Add roommates to their apartment (working)
+    - Cancel/move out of their apartment (partially working)
+    - View all amenities their apartment/property (working)
 
 #### NUMA Property Manager Interface
 - Login using a predesignated mannager id of 1

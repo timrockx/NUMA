@@ -383,23 +383,20 @@ public class Tenant {
 
                         case 4: // view all amenities of property
                             System.out.println("Here at NUMA, all our tenants have complimentary access to their property's amenities.");
-                            System.out.println("Here is a list of all amenities available at your property: ");
+                            System.out.println("All amenities available at your property: ");
 
                             String aQuery = "select * from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
                             PreparedStatement pStmt3 = conn.prepareStatement(aQuery);
                             pStmt3.setInt(1, t_id);
                             ResultSet rs3 = pStmt3.executeQuery();
-                            ResultSetMetaData rs3md = rs3.getMetaData();
-                            int colCount = rs3md.getColumnCount();
 
                             while(rs3.next()) {
                                 System.out.println("\t" + rs3.getString(2));
                             }
                             System.out.println();
-
                             break;
                         
-                        default:
+                        default: // for invalid input
                             System.out.println("[Error]: Please make a proper selection: ");
                             System.out.println("\t1: Make a payment.");
                             System.out.println("\t2: Add a roomate.");

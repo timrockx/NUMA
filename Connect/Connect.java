@@ -22,6 +22,7 @@ public class Connect {
 
                 // attempt connection to database
                 conn = DriverManager.getConnection(DB_URL, user, pass);
+                System.out.print("\033\143");
                 System.out.println("Connection successful!\n");
 
                 // switch case for which interface to access
