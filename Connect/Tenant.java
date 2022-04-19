@@ -5,8 +5,175 @@ import java.util.*;
 
 public class Tenant {
 
-    public static int tenantLogin(Connection conn) {
+    // main interface for tenants
+    public static void tenantInterface(Connection conn) {
+        // instantiate scanner
+        Scanner in = new Scanner(System.in);
+        do {
+            try {
+                 System.out.print("\033\143");
+                 System.out.println("Welcome to the NUMA Tenant Interface!\n");
 
+                 // tenant login
+                 int t_id = tenantLogin(conn);
+                 int choice;
+
+                 do {
+                     // interface menu
+                     System.out.println("Please select an option below:");
+                     System.out.println("\t1: Make a payment.");
+                     System.out.println("\t2: Add a roomate.");
+                     System.out.println("\t3: Move out.");
+                     System.out.println("\t4: View all amenities.");
+                     System.out.println("\t5: View payment history.");
+                     System.out.println("\t0: Exit");
+                     choice = Integer.parseInt(in.nextLine());
+
+                     switch(choice) {
+                        case 0: // quit - display exit message
+                            System.out.println("Thank you for using the NUMA Tenant Interface!");
+                            System.out.println("[Exiting...]");
+                            System.out.print("\033\143");
+                            break;
+                
+                        case 1: // make payment on rent
+                            String pMethodQ = "select * from payment where tenant_id = ?";
+                            PreparedStatement pStmt = conn.prepareStatement(pMethodQ);
+                            pStmt.setInt(1, t_id);
+                            ResultSet rs1 = pStmt.executeQuery();
+                            ResultSetMetaData rsmd1 = rs1.getMetaData();
+
+                            // if payment method is not set, set it
+                            if(rs1.next() == false) {
+                                System.out.println("[Note]: You do not have a payment method on file. Would you like to add one? (y/n)");
+                                String answer = in.nextLine();
+                                if(answer.equalsIgnoreCase("y")) {
+                                    // add payment method
+                                    addPayment(conn, t_id);
+                                } else {
+                                    // quit, we need payment method
+                                    System.out.println("[Note]: A payment method is required before making a payment. Please try again.");
+                                }
+
+                            // if payment method is set, we retrieve then use it to pay
+                            } else {
+                                // get payment method
+                                String payMethod = rs1.getString(2);
+                                System.out.println("Your payment method on file is: " + payMethod + ". Would you like to use this to pay? (y/n)");
+                                String option = in.nextLine();
+                                if(option.equalsIgnoreCase("y")) {
+                                    // process payment with payMethod
+                                    makePayment(conn, t_id, payMethod);
+                                    
+                                } else if(option.equalsIgnoreCase("n")) {
+                                    System.out.println("[Redirect]: Redirecting to update payment method.");
+                                    // call updatePayment method 
+                                    addPayment(conn, t_id);
+                                    // after setting payment method, make payment
+                                    makePayment(conn, t_id, payMethod);
+                                }
+                            }
+                            pStmt.close();
+                            break;
+
+                        case 2: // add a roommate
+                            System.out.println("How many roommates would you like to add?");
+                            int numRoommates = Integer.parseInt(in.nextLine());
+                            int updatedRows = 0;
+
+                            for(int i=0; i < numRoommates; i++) {
+                                // gather roommate info to add to db
+                                System.out.println("Enter the first & last name of your new roommate:");
+                                String name = in.nextLine();
+                                System.out.println("Enter the phone number of your new roommate: (xxx-xxx-xxxx)");
+                                String phone = in.nextLine();
+                                System.out.println("Enter the email of your new roommate: ");
+                                String email = in.nextLine();
+
+                                // add roommate to db (using tenant id collected at start)
+                                String addRoommateQ = "insert into roommate values(?, ?, ?, ?)";
+                                PreparedStatement addpStmt = conn.prepareStatement(addRoommateQ);
+                                // set parameters for roommate
+                                addpStmt.setString(1, name);
+                                addpStmt.setString(2, phone);
+                                addpStmt.setString(3, email);
+                                addpStmt.setInt(4, t_id);
+                                // execute query
+                                if(addpStmt.executeUpdate() == 1) {
+                                    System.out.println("[Success]: You have successfully added a roommate.");
+                                    updatedRows++;
+                                } else {
+                                    System.out.println("[Error]: Could not add roommate. Please try again.");
+                                }
+                            }
+                            if(updatedRows == numRoommates) {
+                                System.out.println("[Update]: All roommates added successfully.");
+                            } 
+                            break;
+
+                        case 3: // move out or cancel lease
+                            System.out.println("Please confirm you would like to move out of your apartment (y/n): ");
+                            String confirm = in.nextLine(); 
+                            // validate input
+                            if(confirm.equalsIgnoreCase("y")) {
+                                // move out
+                                System.out.println("[Note]: All tenant information will be deleted upon move out.");
+                                System.out.println("[Update]: Move out successful.");
+                                moveOut(conn, t_id);
+                                break;
+
+                            } else if(confirm.equalsIgnoreCase("n")) {
+                                System.out.println("[Reverting to previous menu...]");
+
+                            } else {
+                                System.out.println("[Error]: Please enter an appropriate choice (y/n):");;
+                            }
+                            break;
+
+                        case 4: // view all amenities of property
+                            System.out.println("Here at NUMA, all our tenants have complimentary access to their property's amenities.");
+                            System.out.println("All amenities available at your property: ");
+
+                            String aQuery = "select * from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
+                            PreparedStatement pStmt3 = conn.prepareStatement(aQuery);
+                            pStmt3.setInt(1, t_id);
+                            ResultSet rs3 = pStmt3.executeQuery();
+
+                            while(rs3.next()) {
+                                System.out.println("\t" + rs3.getString(2));
+                            }
+                            System.out.println();
+                            break;
+
+                        case 5: // view payment history
+                            viewPaymentHistory(conn, t_id);
+                            break;
+                        
+                        default: // for invalid input
+                            System.out.println("[Error]: Please make a proper selection: ");
+                            System.out.println("\t1: Make a payment.");
+                            System.out.println("\t2: Add a roomate.");
+                            System.out.println("\t3: Move out.");
+                            System.out.println("\t4: View amenities.");
+                            System.out.println("\t5: View payment history.");
+                            System.out.println("\t0: Quit.");
+                            break;
+                     }  
+                } while (choice != 0);
+            }
+            catch (SQLException sqle) {
+                System.out.println("[Error]: Connect error. Please try again.");
+                sqle.printStackTrace();
+            }
+
+        } while (conn == null);
+        
+   }
+
+
+    // login method for tenants, verify tenant_id
+    public static int tenantLogin(Connection conn) {
+        // instantiate scanner
         Scanner in = new Scanner(System.in);
         int t_id = 0;
         try {
@@ -158,6 +325,7 @@ public class Tenant {
         } while(paymentSet == false);
     }
 
+    // make a payment on rent on tenant's account
     public static void makePayment(Connection conn, int tenant_id, String payMethod) {
         Scanner in = new Scanner(System.in);
         boolean paymentMade = false;
@@ -165,6 +333,17 @@ public class Tenant {
         // iterate while payment has not been made
         do {
             try {
+                // get tenant's last payment date
+
+
+
+
+
+
+
+
+
+
                 // get tenant's monthly rate
                 String rateQuery = "select monthly_price from lease natural join lives_in where tenant_id = ?";
                 PreparedStatement pStatement = conn.prepareStatement(rateQuery);
@@ -179,7 +358,6 @@ public class Tenant {
                 } else {
                     monthly_price = Integer.parseInt(rs1.getString(1));
                 }
-
                 // close pstatement and resultset
                 pStatement.close();
                 rs1.close();
@@ -199,10 +377,10 @@ public class Tenant {
                     // check resultset, then change paymentMade variable
                     int rowsChanged = pStmt.executeUpdate();
                     if(rowsChanged == 1) {
-                        System.out.println("[Thank You]: Payment WAS made successfully.");
+                        System.out.println("[Thank You]: Payment was made successfully.");
                         paymentMade = true;
                     } else {
-                        System.out.println("[Error]: Issue with payment method. Please login and try again.");
+                        System.out.println("[Error]: Issue with  payment method. Please login and try again.");
                         paymentMade = true; 
                     }
 
@@ -211,7 +389,7 @@ public class Tenant {
                 } else if(payNow.equalsIgnoreCase("n")) {
                     // print warning message, but do nothing
                     System.out.println("[Reminder]: If you do not pay by the end of the month, you will be charged a late fee of $100.\n");
-                    paymentMade = true; // exit loop and quit
+                    break; // exit loop and quit
 
                 } else {
                     // invalid input
@@ -220,13 +398,46 @@ public class Tenant {
 
             }
             catch(SQLException sqle) {
-                System.out.println("[Error]: Connect error. Please try again.");
+                System.out.println("[Error]: Error with Database. Please try again.");
                 sqle.printStackTrace();
             }
         } while(paymentMade == false);
     }
 
+    // view payment history for tenant
+    public static void viewPaymentHistory(Connection conn, int tenant_id) {
+        try {
+            // query to get payment history from tenant
+            String payHistoryQ = "select * from payment_history where tenant_id = ?";
+            PreparedStatement pStmt = conn.prepareStatement(payHistoryQ);
+            pStmt.setInt(1, tenant_id);
+            ResultSet rs = pStmt.executeQuery();
 
+            if(rs.next() == false) {
+                System.out.println("[Error]: No payment history found. Please try again.");
+            } else {
+                // print header
+                System.out.println("Payment History");
+                System.out.println("================");
+                System.out.println("Date Paid\t\t\tAmount\t\tMethod");
+                System.out.println("================");
+
+                // print payment history
+                do {
+                    System.out.println(rs.getString(2) + "\t\t" + rs.getString(3) + "\t\t" + rs.getString(4));
+                } while(rs.next());
+                System.out.println();
+            }
+            pStmt.close();
+            rs.close();
+        }
+        catch(SQLException sqle) {
+            System.out.println("[Error]: Error with Database. Please try again.");
+            sqle.printStackTrace();
+        }
+    }
+
+    // tenant move-out of building
     public static void moveOut(Connection conn, int tenant_id) {
         
         try {
@@ -260,160 +471,5 @@ public class Tenant {
     }
 
 
-    public static void tenantInterface(Connection conn) {
-        // instantiate scanner
-        Scanner in = new Scanner(System.in);
-        do {
-            try {
-                 // on successful connection, clear console
-                 System.out.print("\033\143");
-                 System.out.println("Welcome to the NUMA Tenant Interface!\n");
-
-                 // tenant login interface
-                 int t_id = tenantLogin(conn);
-                 int choice;
-                 do {
-                     // interface menu
-                     System.out.println("Please select an option below:");
-                     System.out.println("\t1: Make a payment.");
-                     System.out.println("\t2: Add a roomate.");
-                     System.out.println("\t3: Move out.");
-                     System.out.println("\t4: View all amenities.");
-                     System.out.println("\t0: Exit");
-                     choice = Integer.parseInt(in.nextLine());
-
-                     switch(choice) {
-                        case 0: // quit - display exit message
-                            System.out.println("Thank you for using the NUMA Tenant Interface!");
-                            System.out.println("[Exiting...]");
-                            System.out.print("\033\143");
-                            break;
-                
-                        case 1: // make payment on rent
-                            String pMethodQ = "select * from payment where tenant_id = ?";
-                            PreparedStatement pStmt = conn.prepareStatement(pMethodQ);
-                            pStmt.setInt(1, t_id);
-                            ResultSet rs1 = pStmt.executeQuery();
-                            ResultSetMetaData rsmd1 = rs1.getMetaData();
-
-                            // if payment method is not set, set it
-                            if(rs1.next() == false) {
-                                System.out.println("You do not have a payment method on file. Would you like to add one? (y/n)");
-                                String answer = in.nextLine();
-                                if(answer.equalsIgnoreCase("y")) {
-                                    // add payment method
-                                    addPayment(conn, t_id);
-                                } else {
-                                    System.out.println("A payment method is required before making a payment. Please try again.");
-                                }
-
-                            // if payment method is set, we retrieve then use it to pay
-                            } else {
-                                // get payment method
-                                String payMethod = rs1.getString(2);
-                                System.out.println("Your payment method on file is: " + payMethod + ". Would you like to use this to pay? (y/n)");
-                                String option = in.nextLine();
-                                if(option.equalsIgnoreCase("y")) {
-                                    // process payment with payMethod
-                                    makePayment(conn, t_id, payMethod);
-                                    
-                                } else if(option.equalsIgnoreCase("n")) {
-                                    // call addPayment method 
-                                    addPayment(conn, t_id);
-                                    // after setting payment method, make payment
-                                    makePayment(conn, t_id, payMethod);
-                                }
-                            }
-                            pStmt.close();
-                            break;
-
-                        case 2: // add a roommate
-                            System.out.println("How many roommates would you like to add?");
-                            int numRoommates = Integer.parseInt(in.nextLine());
-                            int updatedRows = 0;
-
-                            for(int i=0; i < numRoommates; i++) {
-                                // gather roommate info to add to db
-                                System.out.println("Enter the first & last name of your new roommate:");
-                                String name = in.nextLine();
-                                System.out.println("Enter the phone number of your new roommate: (xxx-xxx-xxxx)");
-                                String phone = in.nextLine();
-                                System.out.println("Enter the email of your new roommate: ");
-                                String email = in.nextLine();
-
-                                // add roommate to db (using tenant id collected at start)
-                                String addRoommateQ = "insert into roommate values(?, ?, ?, ?)";
-                                PreparedStatement addpStmt = conn.prepareStatement(addRoommateQ);
-                                // set parameters for roommate
-                                addpStmt.setString(1, name);
-                                addpStmt.setString(2, phone);
-                                addpStmt.setString(3, email);
-                                addpStmt.setInt(4, t_id);
-                                // execute query
-                                if(addpStmt.executeUpdate() == 1) {
-                                    System.out.println("[Success]: You have successfully added a roommate.");
-                                    updatedRows++;
-                                } else {
-                                    System.out.println("[Error]: Could not add roommate. Please try again.");
-                                }
-                            }
-                            if(updatedRows == numRoommates) {
-                                System.out.println("[Update]: All roommates added successfully.");
-                            } 
-                            break;
-
-                        case 3: // move out or cancel lease
-                            System.out.println("Please confirm you would like to move out of your apartment (y/n): ");
-                            String confirm = in.nextLine(); 
-                            // validate input
-                            if(confirm.equalsIgnoreCase("y")) {
-                                // move out
-                                System.out.println("[Note]: All tenant information will be deleted upon move out.");
-                                System.out.println("[Update]: Move out successful.");
-                                moveOut(conn, t_id);
-                                break;
-
-                            } else if(confirm.equalsIgnoreCase("n")) {
-                                System.out.println("Reverting to previous menu...");
-
-                            } else {
-                                System.out.println("[Error]: Please enter an appropriate choice (y/n):");;
-                            }
-                            break;
-
-                        case 4: // view all amenities of property
-                            System.out.println("Here at NUMA, all our tenants have complimentary access to their property's amenities.");
-                            System.out.println("All amenities available at your property: ");
-
-                            String aQuery = "select * from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
-                            PreparedStatement pStmt3 = conn.prepareStatement(aQuery);
-                            pStmt3.setInt(1, t_id);
-                            ResultSet rs3 = pStmt3.executeQuery();
-
-                            while(rs3.next()) {
-                                System.out.println("\t" + rs3.getString(2));
-                            }
-                            System.out.println();
-                            break;
-                        
-                        default: // for invalid input
-                            System.out.println("[Error]: Please make a proper selection: ");
-                            System.out.println("\t1: Make a payment.");
-                            System.out.println("\t2: Add a roomate.");
-                            System.out.println("\t3: Move out.");
-                            System.out.println("\t4: View all amenities.");
-                            System.out.println("\t0: Exit");
-                            break;
-                     }  
-                } while (choice != 0);
-            }
-            catch (SQLException sqle) {
-                System.out.println("[Error]: Connect error. Please try again.");
-                sqle.printStackTrace();
-            }
-
-        } while (conn == null);
-        
-   }
-
+    
 }
