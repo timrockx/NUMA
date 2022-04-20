@@ -1,6 +1,8 @@
 import java.sql.*;
 import java.sql.Date;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 
 public class Tenant {
@@ -41,7 +43,6 @@ public class Tenant {
                             PreparedStatement pStmt = conn.prepareStatement(pMethodQ);
                             pStmt.setInt(1, t_id);
                             ResultSet rs1 = pStmt.executeQuery();
-                            ResultSetMetaData rsmd1 = rs1.getMetaData();
 
                             // if payment method is not set, set it
                             if(rs1.next() == false) {
@@ -333,68 +334,123 @@ public class Tenant {
         // iterate while payment has not been made
         do {
             try {
-                // get tenant's last payment date
+                 // get tenant's monthly rate
+                 String rateQuery = "select monthly_price from lease natural join lives_in where tenant_id = ?";
+                 PreparedStatement pStatement = conn.prepareStatement(rateQuery);
+                 pStatement.setInt(1, tenant_id);
+                 ResultSet rs1 = pStatement.executeQuery();
+                 int monthly_price = 0;
+ 
+                 // get monthly_price and store in local var
+                 if(rs1.next() == false) {
+                     System.out.println("[Error]: Failed to retrieve your monthly lease price. Please try again.");
+                     break;
+                 } else {
+                     monthly_price = Integer.parseInt(rs1.getString(1));
+                 }
+                 // close pstatement and resultset
+                 pStatement.close();
+                 rs1.close();
 
+                // get tenant's last payment info
+                String lastPayQ = "select date_paid, amount from payment_history where tenant_id = ? order by date_paid desc fetch first row only";
+                PreparedStatement lastPayStmt = conn.prepareStatement(lastPayQ);
+                lastPayStmt.setInt(1, tenant_id);
+                ResultSet lastPayRS = lastPayStmt.executeQuery();
+                int last_paid = 0;
+                // java.sql.Date datePaid = null;
+                int amountDue = 0;
 
+                if(lastPayRS.next() == false) {
+                    // make first payment
+                    System.out.println("You have a payment of $" + monthly_price + " due. Would you like to pay now? (y/n) ");
+                    String payNow = in.nextLine();
 
+                    if(payNow.equalsIgnoreCase("y")) {
+                        // add to payment history
+                        String payQuery = "insert into payment_history (tenant_id, date_paid, amount, method) values (?, SYSDATE, ?, ?)";
+                        PreparedStatement pStmt = conn.prepareStatement(payQuery);
+                        // set arguments of query
+                        pStmt.setInt(1, tenant_id);
+                        pStmt.setInt(2, monthly_price);
+                        pStmt.setString(3, payMethod);
 
+                        // check resultset, then change paymentMade variable
+                        int rowsChanged = pStmt.executeUpdate();
+                        if(rowsChanged == 1) {
+                            System.out.println("[Thank You]: Payment was made successfully.");
+                            paymentMade = true;
+                        } else {
+                            System.out.println("[Error]: Issue with  payment method. Please login and try again.");
+                            paymentMade = true; 
+                        }
+                        pStmt.close();
 
+                    } else if(payNow.equalsIgnoreCase("n")) {
+                        // print warning message, but do nothing
+                        System.out.println("[Reminder]: If you do not pay by the end of the month, you will be charged a late fee of $100.\n");
+                        break; // exit loop and quit
 
-
-
-
-
-                // get tenant's monthly rate
-                String rateQuery = "select monthly_price from lease natural join lives_in where tenant_id = ?";
-                PreparedStatement pStatement = conn.prepareStatement(rateQuery);
-                pStatement.setInt(1, tenant_id);
-                ResultSet rs1 = pStatement.executeQuery();
-                int monthly_price = 0;
-
-                // get monthly_price and store in local var
-                if(rs1.next() == false) {
-                    System.out.println("[Error]: Failed to retrieve your monthly lease price. Please try again.");
-                    break;
-                } else {
-                    monthly_price = Integer.parseInt(rs1.getString(1));
-                }
-                // close pstatement and resultset
-                pStatement.close();
-                rs1.close();
-
-                // get late payments OR find tenant's monthly rent somehow
-                System.out.println("You have a payment of $" + monthly_price + " due at the end of the month. Would you like to pay now? (y/n) ");
-                String payNow = in.nextLine();
-                if(payNow.equalsIgnoreCase("y")) {
-                    // add to payment history
-                    String payQuery = "insert into payment_history (tenant_id, date_paid, amount, method) values (?, SYSDATE, ?, ?)";
-                    PreparedStatement pStmt = conn.prepareStatement(payQuery);
-                    // set arguments of query
-                    pStmt.setInt(1, tenant_id);
-                    pStmt.setInt(2, monthly_price);
-                    pStmt.setString(3, payMethod);
-
-                    // check resultset, then change paymentMade variable
-                    int rowsChanged = pStmt.executeUpdate();
-                    if(rowsChanged == 1) {
-                        System.out.println("[Thank You]: Payment was made successfully.");
-                        paymentMade = true;
                     } else {
-                        System.out.println("[Error]: Issue with  payment method. Please login and try again.");
-                        paymentMade = true; 
+                        // invalid input
+                        System.out.println("[Error]: Please enter either (y/n) as a proper response.");
                     }
 
-                    pStmt.close();
-
-                } else if(payNow.equalsIgnoreCase("n")) {
-                    // print warning message, but do nothing
-                    System.out.println("[Reminder]: If you do not pay by the end of the month, you will be charged a late fee of $100.\n");
-                    break; // exit loop and quit
-
                 } else {
-                    // invalid input
-                    System.out.println("[Error]: Please enter either (y/n) as a proper response.");
+                    // either make no payment (balance 0) or make payment on remaining balance
+                    last_paid = lastPayRS.getInt("amount");
+                    // datePaid = lastPayRS.getDate("date_paid");
+
+                    if(last_paid == monthly_price) {
+                        System.out.println("[Note]: You have already paid for this month. Remaining balance is 0.\n");
+                        paymentMade = true;
+                    } else if(last_paid < monthly_price) {
+                        amountDue = monthly_price - last_paid;
+                        System.out.println("[Not: You have a balance of $" + amountDue + " due. Would you like to pay now? (y/n) ");
+                        String payNow = in.nextLine();
+                        if(payNow.equalsIgnoreCase("y")) {
+                            // add to payment history
+                            String payQuery = "insert into payment_history (tenant_id, date_paid, amount, method) values (?, SYSDATE, ?, ?)";
+                            PreparedStatement pStmt = conn.prepareStatement(payQuery);
+                            // set arguments of query
+                            pStmt.setInt(1, tenant_id);
+                            pStmt.setInt(2, amountDue);
+                            pStmt.setString(3, payMethod);
+
+                            int rowsChanged = pStmt.executeUpdate();
+                            if(rowsChanged == 1) {
+                                System.out.println("[Thank You]: Payment was made successfully.");
+                                paymentMade = true;
+                            } else {
+                                System.out.println("[Error]: Issue with  payment method. Please login and try again.");
+                                paymentMade = true; 
+                            }
+                            pStmt.close();
+
+                        } else if(payNow.equalsIgnoreCase("n")) {
+                            // print warning message, but do nothing
+                            System.out.println("[Reminder]: If you do not pay by the end of the month, you will be charged a late fee of $100.\n");
+                            break; // exit loop and quit
+
+                        } else {
+                            // invalid input
+                            System.out.println("[Error]: Please enter either (y/n) as a proper response.");
+                        }
+
+
+
+                    }
                 }
+               // if date paid was within last month, and equal to monthly price then do nothing
+
+                        // get current date
+                        //    long millis=System.currentTimeMillis();  
+                        //    java.sql.Date currDate =new java.sql.Date(millis);  
+                        //    // add 1 month to date paid to see timeline
+                        //    LocalDate localDate = datePaid.toLocalDate();
+                        //    localDate.plusMonths(1);
+                        //    datePaid = java.sql.Date.valueOf(localDate);
+        
 
             }
             catch(SQLException sqle) {
@@ -414,7 +470,7 @@ public class Tenant {
             ResultSet rs = pStmt.executeQuery();
 
             if(rs.next() == false) {
-                System.out.println("[Error]: No payment history found. Please try again.");
+                System.out.println("[Error]: No payment history found. Please try again.\n");
             } else {
                 // print header
                 System.out.println("Payment History");
