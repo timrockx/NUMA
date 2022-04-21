@@ -22,10 +22,10 @@ public class Tenant {
                      // interface menu
                      System.out.println("Please select an option below:");
                      System.out.println("\t1: Make a payment.");
-                     System.out.println("\t2: Add a roomate.");
-                     System.out.println("\t3: Move out.");
-                     System.out.println("\t4: View complimentary amenities.");
-                     System.out.println("\t5: View payment history.");
+                     System.out.println("\t2: View payment history.");
+                     System.out.println("\t3: View complimentary amenities.");
+                     System.out.println("\t4: Add roommates");
+                     System.out.println("\t5: Move out");
                      System.out.println("\t0: Exit");
                      choice = Integer.parseInt(in.nextLine());
 
@@ -75,42 +75,19 @@ public class Tenant {
                             pStmt.close();
                             break;
 
-                        case 2: // add a roommate
-                            System.out.println("How many roommates would you like to add?");
-                            int numRoommates = Integer.parseInt(in.nextLine());
-                            int updatedRows = 0;
-
-                            for(int i=0; i < numRoommates; i++) {
-                                // gather roommate info to add to db
-                                System.out.println("Enter the first & last name of your new roommate:");
-                                String name = in.nextLine();
-                                System.out.println("Enter the phone number of your new roommate: (xxx-xxx-xxxx)");
-                                String phone = in.nextLine();
-                                System.out.println("Enter the email of your new roommate: ");
-                                String email = in.nextLine();
-
-                                // add roommate to db (using tenant id collected at start)
-                                String addRoommateQ = "insert into roommate values(?, ?, ?, ?)";
-                                PreparedStatement addpStmt = conn.prepareStatement(addRoommateQ);
-                                // set parameters for roommate
-                                addpStmt.setString(1, name);
-                                addpStmt.setString(2, phone);
-                                addpStmt.setString(3, email);
-                                addpStmt.setInt(4, t_id);
-                                // execute query
-                                if(addpStmt.executeUpdate() == 1) {
-                                    System.out.println("[Success]: You have successfully added a roommate.");
-                                    updatedRows++;
-                                } else {
-                                    System.out.println("[Error]: Could not add roommate. Please try again.");
-                                }
-                            }
-                            if(updatedRows == numRoommates) {
-                                System.out.println("[Update]: All roommates added successfully.");
-                            } 
+                        case 2: // view payment history
+                            viewPaymentHistory(conn, t_id);
+                            break;
+                            
+                        case 3: // view amenities
+                            viewAmenities(conn, t_id);
                             break;
 
-                        case 3: // move out or cancel lease
+                        case 4: // add roommamtes
+                            addRoommates(conn, t_id);
+                            break;
+
+                        case 5: // move out
                             System.out.println("Please confirm you would like to move out of your apartment (y/n): ");
                             String confirm = in.nextLine(); 
                             // validate input
@@ -128,23 +105,15 @@ public class Tenant {
                                 System.out.println("[Error]: Please enter an appropriate choice (y/n):");;
                             }
                             break;
-
-                        case 4: // view complimentary amenities
-                            viewAmenities(conn, t_id);
-                            break;
-
-                        case 5: // view payment history
-                            viewPaymentHistory(conn, t_id);
-                            break;
                         
-                        default: // for invalid input
+                        default: // invalid input
                             System.out.println("[Error]: Please make a proper selection: ");
                             System.out.println("\t1: Make a payment.");
-                            System.out.println("\t2: Add a roomate.");
-                            System.out.println("\t3: Move out.");
-                            System.out.println("\t4: View complimentary amenities.");
-                            System.out.println("\t5: View payment history.");
-                            System.out.println("\t0: Quit.");
+                            System.out.println("\t2: View payment history.");
+                            System.out.println("\t3: View complimentary amenities.");
+                            System.out.println("\t4: Add roommates");
+                            System.out.println("\t5: Move out");
+                            System.out.println("\t0: Exit");
                             break;
                      }  
                 } while (choice != 0);
@@ -422,22 +391,8 @@ public class Tenant {
                             // invalid input
                             System.out.println("[Error]: Please enter either (y/n) as a proper response.");
                         }
-
-
-
                     }
                 }
-               // if date paid was within last month, and equal to monthly price then do nothing
-
-                        // get current date
-                        //    long millis=System.currentTimeMillis();  
-                        //    java.sql.Date currDate =new java.sql.Date(millis);  
-                        //    // add 1 month to date paid to see timeline
-                        //    LocalDate localDate = datePaid.toLocalDate();
-                        //    localDate.plusMonths(1);
-                        //    datePaid = java.sql.Date.valueOf(localDate);
-        
-
             }
             catch(SQLException sqle) {
                 System.out.println("[Error]: Error with Database. Please try again.");
@@ -479,6 +434,7 @@ public class Tenant {
         }
     }
 
+
     // view amenities for tenant
     public static void viewAmenities(Connection conn, int tenant_id) {
         try {
@@ -500,6 +456,54 @@ public class Tenant {
             sqle.printStackTrace();
         }
     }
+
+
+    // add roommates
+    public static void addRoommates(Connection conn, int tenant_id) {
+        // instantiate scanner
+        Scanner in = new Scanner(System.in);
+
+        try {
+            System.out.println("How many roommates would you like to add?");
+            int numRoommates = Integer.parseInt(in.nextLine());
+            int updatedRows = 0;
+
+            for(int i=0; i < numRoommates; i++) {
+                // gather roommate info to add to db
+                System.out.println("Enter the first & last name of your new roommate:");
+                String name = in.nextLine();
+                System.out.println("Enter the phone number of your new roommate: (xxx-xxx-xxxx)");
+                String phone = in.nextLine();
+                System.out.println("Enter the email of your new roommate: ");
+                String email = in.nextLine();
+
+                // add roommate to db (using tenant id collected at start)
+                String addRoommateQ = "insert into roommate values(?, ?, ?, ?)";
+                PreparedStatement addpStmt = conn.prepareStatement(addRoommateQ);
+                // set parameters for roommate
+                addpStmt.setString(1, name);
+                addpStmt.setString(2, phone);
+                addpStmt.setString(3, email);
+                addpStmt.setInt(4, tenant_id);
+                // execute query
+                if(addpStmt.executeUpdate() == 1) {
+                    System.out.println("[Success]: You have successfully added a roommate.");
+                    updatedRows++;
+                } else {
+                    System.out.println("[Error]: Could not add roommate. Please try again.");
+                }
+            }
+            if(updatedRows == numRoommates) {
+                System.out.println("[Update]: All roommates added successfully.");
+            } 
+
+        }
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Error with database. Please try again.");
+            sqle.printStackTrace();
+        }
+    }
+
 
     // tenant move-out of building
     public static void moveOut(Connection conn, int tenant_id) {
