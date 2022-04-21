@@ -15,18 +15,16 @@ public class Tenant {
             try {
                  System.out.print("\033\143");
                  System.out.println("Welcome to the NUMA Tenant Interface!\n");
-
                  // tenant login
                  int t_id = tenantLogin(conn);
                  int choice;
-
                  do {
                      // interface menu
                      System.out.println("Please select an option below:");
                      System.out.println("\t1: Make a payment.");
                      System.out.println("\t2: Add a roomate.");
                      System.out.println("\t3: Move out.");
-                     System.out.println("\t4: View all amenities.");
+                     System.out.println("\t4: View complimentary amenities.");
                      System.out.println("\t5: View payment history.");
                      System.out.println("\t0: Exit");
                      choice = Integer.parseInt(in.nextLine());
@@ -131,19 +129,8 @@ public class Tenant {
                             }
                             break;
 
-                        case 4: // view all amenities of property
-                            System.out.println("Here at NUMA, all our tenants have complimentary access to their property's amenities.");
-                            System.out.println("All amenities available at your property: ");
-
-                            String aQuery = "select * from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
-                            PreparedStatement pStmt3 = conn.prepareStatement(aQuery);
-                            pStmt3.setInt(1, t_id);
-                            ResultSet rs3 = pStmt3.executeQuery();
-
-                            while(rs3.next()) {
-                                System.out.println("\t" + rs3.getString(2));
-                            }
-                            System.out.println();
+                        case 4: // view complimentary amenities
+                            viewAmenities(conn, t_id);
                             break;
 
                         case 5: // view payment history
@@ -155,7 +142,7 @@ public class Tenant {
                             System.out.println("\t1: Make a payment.");
                             System.out.println("\t2: Add a roomate.");
                             System.out.println("\t3: Move out.");
-                            System.out.println("\t4: View amenities.");
+                            System.out.println("\t4: View complimentary amenities.");
                             System.out.println("\t5: View payment history.");
                             System.out.println("\t0: Quit.");
                             break;
@@ -171,8 +158,7 @@ public class Tenant {
         
    }
 
-
-    // login method for tenants, verify tenant_id
+    // login for tenants, verify tenant_id
     public static int tenantLogin(Connection conn) {
         // instantiate scanner
         Scanner in = new Scanner(System.in);
@@ -488,7 +474,29 @@ public class Tenant {
             rs.close();
         }
         catch(SQLException sqle) {
-            System.out.println("[Error]: Error with Database. Please try again.");
+            System.out.println("[Error]: Error with database. Please try again.");
+            sqle.printStackTrace();
+        }
+    }
+
+    // view amenities for tenant
+    public static void viewAmenities(Connection conn, int tenant_id) {
+        try {
+            System.out.println("\nHere at NUMA, all our tenants have complimentary access to their property's amenities.");
+            System.out.println("All amenities available at your property: ");
+
+            String aQuery = "select * from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
+            PreparedStatement pStmt = conn.prepareStatement(aQuery);
+            pStmt.setInt(1, tenant_id);
+            ResultSet rs3 = pStmt.executeQuery();
+
+            while(rs3.next()) {
+                System.out.println("\t" + rs3.getString(2));
+            }
+            System.out.println();
+        }
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Error with database. Please try again.");
             sqle.printStackTrace();
         }
     }
@@ -516,7 +524,6 @@ public class Tenant {
             // if(deletedRows == 1) {
             //     System.out.println("[Success]: You have successfully moved out of your apartment.");
             // }
-
 
         }
         catch (SQLException sqle) {
