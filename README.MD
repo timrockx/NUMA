@@ -3,16 +3,15 @@
   - [Upcoming Changes:](#upcoming-changes)
   - [Functionality:](#functionality)
     - [Tenant Interface](#tenant-interface)
-    - [NUMA Property Manager Interface](#numa-property-manager-interface)
+    - [Property Manager Interface](#property-manager-interface)
 
 
 &nbsp;
 
 ### Upcoming Changes:
-- payment history table
-- view amenities functionality?
-- prospective tenants?
 - changing payment method has to be different than adding a payment method
+- move out functionality (on_delete cascade, move for property manager)
+- build out numa manager interface
 
 
 ### Functionality:
@@ -27,11 +26,13 @@
     - Cancel/move out of their apartment (partially working)
     - View all amenities their apartment/property (working)
 
-#### NUMA Property Manager Interface
-- Login using a predesignated mannager id of 1
-- Notes:
-  - Interface offers the following functionality:
-    - View all properties in the area
-    - View all apartments and leases for a property
-    - View all amenities offered by each property
+####  Property Manager Interface
+- ADD LOGIN FUNCTIONALITY
+- Property Manager Interface offers the following functionality:
+  1. View all properties
+  2. View all apartments for rent in the aera
+  3. Record a visit by a prospective tenant
+  4. Sign a lease and move-in a tenant
+  5. [WIP]: Move-out a tenant
+
 
