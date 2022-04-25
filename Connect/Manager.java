@@ -3,7 +3,7 @@ import java.util.*;
 
 public class Manager {
     
-    // manger interface
+    // main interface for property manger
     public static void managerInterface(Connection conn) {
         // instantiate scanner
         Scanner in = new Scanner(System.in);
@@ -20,6 +20,7 @@ public class Manager {
                     System.out.println("\t2: View all apartments available for rent.");
                     System.out.println("\t3: Record a visit by a prospective tenant.");
                     System.out.println("\t4: Add a tenant to system and sign a lease.");
+                    System.out.println("\t5: Move out a tenant.");
                     System.out.println("\t0: Exit");
                     // switch through choice
                     choice = Integer.parseInt(in.nextLine());
@@ -40,16 +41,15 @@ public class Manager {
 
                             ResultSet rs1 = pStmt.executeQuery();
                             ResultSetMetaData rsmd = rs1.getMetaData();
-                            int colNum1 = rsmd.getColumnCount();
-
-                            System.out.println("Properties in NUMA Enterprises: ");
-                            System.out.println("================");
-                            System.out.println("Property ID\tStreet\t\t\tCity\t\t\tState\t\tNum. Apts.\t\t");
 
                             if(rs1.next() == false) {
                                 System.out.println("[Error]: No properties found in NUMA System.");
                             } else {
-                                // print property info
+                                // display results
+                                System.out.println("Properties in NUMA Enterprises: ");
+                                System.out.println("================");
+                                System.out.println("Property ID\tStreet\t\t\tCity\t\t\tState\t\tNum. Apts.\t\t");
+
                                 do {
                                     System.out.println(rs1.getString(1) + "\t\t" + rs1.getString(2) + "\t\t" + rs1.getString(3) + "\t\t" + rs1.getString(4) + "\t\t" + rs1.getString(5) + "\t\t");
                                 } while(rs1.next());
@@ -63,15 +63,15 @@ public class Manager {
                             PreparedStatement pStmt3 = conn.prepareStatement(leaseQuery);
                             ResultSet rs3 = pStmt3.executeQuery();
 
-                            // display results
-                            System.out.println("Apartments for Rent in NUMA Enterprises: ");
-                            System.out.println("================");
-                            System.out.println("Apt. Num\tBeds\t\tBaths\t\tSq. Ft.\t\tPrice (per M)\t\tProperty ID");
-
                             if(rs3.next() == false) {
-                                System.out.println("[Error]: No apartments available for rent at specified property.");
+                                System.out.println("[Error]: No apartments available for rent at specified property.\n");
+
                             } else {
-                                // print out apartment info
+                                // display results
+                                System.out.println("Apartments for Rent in NUMA Enterprises: ");
+                                System.out.println("================");
+                                System.out.println("Apt. Num\tBeds\t\tBaths\t\tSq. Ft.\t\tPrice (per M)\t\tProperty ID");
+
                                 do {
                                     System.out.println(rs3.getString(1) + "\t\t" + rs3.getString(2) + "\t\t" + rs3.getString(3) + "\t\t" + rs3.getString(4) + "\t\t" + rs3.getString(5) + "\t\t\t" + rs3.getString(6));
                                 } while(rs3.next());
@@ -83,7 +83,7 @@ public class Manager {
                             // record a visit by a prospective tenant
                             System.out.println("Enter the visitor's name: ");
                             String visitorName = in.nextLine();
-                            System.out.println("Enter the visitor's phone number: ");
+                            System.out.println("Enter the visitor's phone number: (xxx-xxx-xxxx) ");
                             String visitorPhone = in.nextLine();
                             System.out.println("Enter the visitor's email: ");
                             String visitorEmail = in.nextLine();
@@ -103,66 +103,14 @@ public class Manager {
                             break;
 
                         case 4:
-                            System.out.println("\nWhat apartment would you like to rent?");
-                            int apt_num = Integer.parseInt(in.nextLine());
-                             // get all empty apartment IDs
-                             String emptyAptQ = "select apt_num from lease natural join apartment where apt_num not in (select apt_num from lives_in)";
-                             PreparedStatement pStmt5 = conn.prepareStatement(emptyAptQ);
-                             ResultSet rs5 = pStmt5.executeQuery();
-                             ResultSetMetaData rsmd2 = rs5.getMetaData();
-                             int colNum2 = rsmd2.getColumnCount();
-                             ArrayList<String> aptNums = new ArrayList<String>(colNum2);
-                             while(rs5.next()) {
-                                 int i = 1;
-                                 while(i <= colNum2) {
-                                     aptNums.add(rs5.getString(i++));
-                                 }
-                             }
-                             // if empty, then we insert tenant
-                             if(aptNums.contains(Integer.toString(apt_num))) {
-                                // get tenant info
-                                System.out.println("Enter the tenant's Name: ");
-                                String name = in.nextLine();
-                                System.out.println("Enter the tenant's SSN: ");
-                                String ssn = in.nextLine();
-                                System.out.println("Enter the tenant's Phone Number: ");
-                                String phone = in.nextLine();
-                                System.out.println("Enter the tenant's Bank Routing: ");
-                                String bank = in.nextLine();
-
-                                // insert into tenant table
-                                int tenant_id = createTenantID(conn);
-                                System.out.println("TENANT ID: "+ tenant_id);
-                                String insertQ = "insert into tenant values (?, ?, ?, ?, ?)";
-                                PreparedStatement pStmt6 = conn.prepareStatement(insertQ);
-                                pStmt6.setInt(1, tenant_id);
-                                pStmt6.setString(2, name);
-                                pStmt6.setString(3, ssn);
-                                pStmt6.setString(4, phone);
-                                pStmt6.setString(5, bank);
-                                int rowsChanged2 = pStmt6.executeUpdate();
-
-                                // insert into lives_in table (equivalent to signing the lease)
-                                String insertQ2 = "insert into lives_in values (?, ?)";
-                                PreparedStatement pStmt7 = conn.prepareStatement(insertQ2);
-                                pStmt7.setInt(1, tenant_id);
-                                pStmt7.setInt(2, apt_num);
-                                int rowsChanged3 = pStmt7.executeUpdate();
-
-                                if(rowsChanged2 == 1 && rowsChanged3 == 1) {
-                                    System.out.println("[Update]: Tenant '" + name + "' has been added to the database.\n");
-
-                                } else {
-                                    System.out.println("[Error]: Tenant could not be added to the database.\n");
-                                    System.out.println("Tenant ID: " + tenant_id);
-                                }
-
-                             } else {
-                                 // if apartment is not empty, print error message
-                                 System.out.println("[Error]: This apartment is currently occupied and not available for rent.");
-                                 System.out.println("Please choose another apartment to rent.\n");
-                             }
+                            // move a tenant into apartment
+                            moveTenantIn(conn);
                             break;
+
+                        case 5:
+                            // move out a tenant
+                             moveTenantOut(conn);
+                             break;
                         
                         default:
                             // invalid choice
@@ -171,6 +119,7 @@ public class Manager {
                             System.out.println("\t2: View all apartments for rent in a property.");
                             System.out.println("\t3: Record a visit by a prospective tenant.");
                             System.out.println("\t4: Add a tenant to system and sign a lease.");
+                            System.out.println("\t5: Move out a tenant.");
                             System.out.println("\t0: Exit");
                             break;
                     }
@@ -214,6 +163,152 @@ public class Manager {
             sqle.printStackTrace();
         }
         return newTID;
+    }
+
+    // move a tenant into an empty apartment
+    public static void moveTenantIn(Connection conn) {
+        Scanner in = new Scanner(System.in);
+        try {
+            System.out.println("\nEnter the apartment number to rent: ");
+            int apt_num = Integer.parseInt(in.nextLine());
+
+            // get all empty apartments
+            String emptyAptQ = "select apt_num from lease natural join apartment where apt_num not in (select apt_num from lives_in)";
+            PreparedStatement pStmt5 = conn.prepareStatement(emptyAptQ);
+            ResultSet rs5 = pStmt5.executeQuery();
+            ResultSetMetaData rsmd2 = rs5.getMetaData();
+            int colNum2 = rsmd2.getColumnCount();
+            ArrayList<String> aptNums = new ArrayList<String>(colNum2);
+            while(rs5.next()) {
+                int i = 1;
+                while(i <= colNum2) {
+                    aptNums.add(rs5.getString(i++));
+                }
+            }
+
+            if(aptNums.contains(Integer.toString(apt_num))) {
+                // apartment is open for rent
+                System.out.println("Enter the tenant's Name: ");
+                String name = in.nextLine();
+                System.out.println("Enter the tenant's SSN: ");
+                String ssn = in.nextLine();
+                System.out.println("Enter the tenant's Phone Number: ");
+                String phone = in.nextLine();
+                System.out.println("Enter the tenant's Bank Routing: ");
+                String bank = in.nextLine();
+
+                 // insert into tenant table
+                int tenant_id = createTenantID(conn);
+                System.out.println("TENANT ID: "+ tenant_id);
+                String insertQ = "insert into tenant values (?, ?, ?, ?, ?)";
+                PreparedStatement pStmt6 = conn.prepareStatement(insertQ);
+                pStmt6.setInt(1, tenant_id);
+                pStmt6.setString(2, name);
+                pStmt6.setString(3, ssn);
+                pStmt6.setString(4, phone);
+                pStmt6.setString(5, bank);
+                int rowsChanged2 = pStmt6.executeUpdate();
+
+                // insert into lives_in table (equivalent to signing the lease)
+                String insertQ2 = "insert into lives_in values (?, ?)";
+                PreparedStatement pStmt7 = conn.prepareStatement(insertQ2);
+                pStmt7.setInt(1, tenant_id);
+                pStmt7.setInt(2, apt_num);
+                int rowsChanged3 = pStmt7.executeUpdate();
+
+                if(rowsChanged2 == 1 && rowsChanged3 == 1) {
+                    System.out.println("[Update]: Tenant '" + name + "' has been added to the database.\n");
+        
+                } else {
+                    System.out.println("[Error]: Tenant could not be added to the database.\n");
+                    System.out.println("Tenant ID: " + tenant_id);
+                }
+
+            } else {
+                 // if apartment is not empty, print error message
+                System.out.println("[Error]: This apartment is currently occupied and not available for rent.");
+                System.out.println("Please choose another apartment to rent.\n");
+            }
+        }
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Error with database.");
+            // sqle.printStackTrace();
+        }
+        catch (InputMismatchException e) {
+            System.out.println("[Error]: Error with input. Please try again.");
+        }
+    }
+
+
+    // move tenant out
+    public static void moveTenantOut(Connection conn) {
+        Scanner in = new Scanner(System.in);
+        try {
+            System.out.println("\nEnter the tenant's ID: ");
+            int tenant_id = Integer.parseInt(in.nextLine());
+
+            // verify tenant id
+            tenant_id = verifyTenantID(conn, tenant_id);
+            if(tenant_id == 0) {
+                System.out.println("[Error]: Tenant ID is invalid. Please try again.\n");
+                return;
+            }
+
+            // remove from tenant table, rest will follow
+            String deleteQ = "delete from tenant where tenant_id = ?";
+            PreparedStatement pStmt = conn.prepareStatement(deleteQ);
+            pStmt.setInt(1, tenant_id);
+            int rowsChanged = pStmt.executeUpdate();
+
+            if(rowsChanged == 1) {
+                System.out.println("[Update]: Tenant has been moved out of NUMA Enterprises.\n");
+            } else {
+                System.out.println("[Error]: Tenant could not be moved out successfully. Please try again.\n");
+            }
+
+        }
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Error with database.");
+            // sqle.printStackTrace();
+        }
+        catch (InputMismatchException e) {
+            System.out.println("[Error]: Error with input. Please try again.");
+        }
+        in.close();
+    }
+
+
+    // verify a tenant ID is in database
+    public static int verifyTenantID(Connection conn, int tenant_id) {
+        try {
+            // get all tenant IDS, then check that the inputted ID is in the list
+            String verifyQ = "select tenant_id from tenant";
+            PreparedStatement pStmt = conn.prepareStatement(verifyQ);
+            ResultSet rs = pStmt.executeQuery();
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int colCount = rsmd.getColumnCount();
+
+            // store all tenant ids into an arraylist
+            ArrayList<String> idList = new ArrayList<String>(colCount);
+            while(rs.next()) {
+                int i = 1;
+                while(i <= colCount) {
+                    idList.add(rs.getString(i++));
+                }
+            }
+
+            // check ID is in validated list
+            if(idList.contains(Integer.toString(tenant_id))) {
+                return tenant_id;
+            } 
+
+        }
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Error with database.");
+            // sqle.printStackTrace();
+
+        }
+        return 0;
     }
 
 }
