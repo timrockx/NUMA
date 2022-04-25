@@ -1,8 +1,4 @@
 import java.sql.*;
-import java.sql.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.*;
 
 public class Tenant {
@@ -52,11 +48,11 @@ public class Tenant {
                                 } else {
                                     // quit, we need payment method
                                     System.out.println("[Note]: A payment method is required before making a payment. Please try again.");
+                                    break;
                                 }
 
                             // if payment method is set, we retrieve then use it to pay
                             } else {
-                                // get payment method
                                 String payMethod = rs1.getString(2);
                                 System.out.println("Your payment method on file is: " + payMethod + ". Would you like to use this to pay? (y/n)");
                                 String option = in.nextLine();
@@ -439,17 +435,50 @@ public class Tenant {
     public static void viewAmenities(Connection conn, int tenant_id) {
         try {
             System.out.println("\nHere at NUMA, all our tenants have complimentary access to their property's amenities.");
-            System.out.println("All amenities available at your property: ");
 
-            String aQuery = "select * from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
-            PreparedStatement pStmt = conn.prepareStatement(aQuery);
-            pStmt.setInt(1, tenant_id);
-            ResultSet rs3 = pStmt.executeQuery();
+            // String aQuery = "select * from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
+            String gymQ = "select amenity_type, treadmills, power_racks, showers from amenities natural join gym where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
+            String poolQ = "select amenity_type, length, depth, num_lanes from amenities natural join pool where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
 
-            while(rs3.next()) {
-                System.out.println("\t" + rs3.getString(2));
-            }
-            System.out.println();
+            PreparedStatement pStmt1 = conn.prepareStatement(gymQ);
+            PreparedStatement pStmt2 = conn.prepareStatement(poolQ);
+            pStmt1.setInt(1, tenant_id);
+            pStmt2.setInt(1, tenant_id);
+            ResultSet rs1 = pStmt1.executeQuery();
+            ResultSet rs2 = pStmt2.executeQuery();
+
+             System.out.println("Amenities Offered");
+             System.out.println("================");
+             System.out.println("Type\t\t\tTreadmills/Length\tPower Racks/Depth\tShowers/Lanes");
+             System.out.println("================");
+
+             // print gym info
+             if(rs1.next() == false) {
+
+             } else {
+                do {
+                    System.out.println(rs1.getString(1) + "\t\t\t" + rs1.getString(2) + "\t\t\t" + rs1.getString(3) + "\t\t\t" + rs1.getString(4));
+                } while(rs1.next());
+                System.out.println();
+             }
+            
+             // print pool info
+             if(rs2.next() == false) {
+
+             } else {
+                do {
+                    System.out.println(rs2.getString(1) + "\t\t\t" + rs2.getString(2) + "\t\t\t" + rs2.getString(3) + "\t\t\t" + rs2.getString(4));
+                } while(rs1.next());
+                System.out.println();
+
+             }
+            
+            // close statements & rs
+            pStmt1.close();
+            pStmt2.close();
+            rs1.close();
+            rs2.close();
+
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Error with database. Please try again.");
@@ -467,6 +496,7 @@ public class Tenant {
             System.out.println("How many roommates would you like to add?");
             int numRoommates = Integer.parseInt(in.nextLine());
             int updatedRows = 0;
+            PreparedStatement addpStmt = null;
 
             for(int i=0; i < numRoommates; i++) {
                 // gather roommate info to add to db
@@ -479,7 +509,7 @@ public class Tenant {
 
                 // add roommate to db (using tenant id collected at start)
                 String addRoommateQ = "insert into roommate values(?, ?, ?, ?)";
-                PreparedStatement addpStmt = conn.prepareStatement(addRoommateQ);
+                addpStmt = conn.prepareStatement(addRoommateQ);
                 // set parameters for roommate
                 addpStmt.setString(1, name);
                 addpStmt.setString(2, phone);
@@ -496,7 +526,7 @@ public class Tenant {
             if(updatedRows == numRoommates) {
                 System.out.println("[Update]: All roommates added successfully.");
             } 
-
+            addpStmt.close();
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Error with database. Please try again.");
@@ -528,6 +558,9 @@ public class Tenant {
             // if(deletedRows == 1) {
             //     System.out.println("[Success]: You have successfully moved out of your apartment.");
             // }
+
+            // close statements
+            pStmt1.close();
 
         }
         catch (SQLException sqle) {
