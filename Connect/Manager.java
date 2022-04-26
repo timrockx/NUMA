@@ -38,12 +38,10 @@ public class Manager {
                             System.out.println("All property listings in the area:\n");
                             String propertyQuery = "select * from property";
                             PreparedStatement pStmt = conn.prepareStatement(propertyQuery);
-
                             ResultSet rs1 = pStmt.executeQuery();
-                            ResultSetMetaData rsmd = rs1.getMetaData();
 
                             if(rs1.next() == false) {
-                                System.out.println("[Error]: No properties found in NUMA System.");
+                                System.out.println("[Error]: No properties found in NUMA System.\n");
                             } else {
                                 // display results
                                 System.out.println("Properties in NUMA Enterprises: ");
@@ -59,12 +57,12 @@ public class Manager {
 
                         case 2:
                             // query to search for apartments that have a lease but no tenant (available for rent)
-                            String leaseQuery = "select apt_num, num_beds, num_baths, sq_foot, monthly_price, p_id from lease natural join apartment where apt_num not in (select apt_num from lives_in)";
+                            String leaseQuery = "select apt_num, num_beds, num_baths, sq_foot, monthly_price, p_id from lease natural join apartment where apt_num not in (select apt_num from lives_in) order by p_id";
                             PreparedStatement pStmt3 = conn.prepareStatement(leaseQuery);
                             ResultSet rs3 = pStmt3.executeQuery();
 
                             if(rs3.next() == false) {
-                                System.out.println("[Error]: No apartments available for rent at specified property.\n");
+                                System.out.println("[Error]: No apartments available for rent in the NUMA System.\n");
 
                             } else {
                                 // display results
@@ -114,7 +112,7 @@ public class Manager {
                         
                         default:
                             // invalid choice
-                            System.out.println("Please make a proper selection (1-3).");
+                            System.out.println("Please make a proper selection: ");
                             System.out.println("\t1: View all property listings.");
                             System.out.println("\t2: View all apartments for rent in a property.");
                             System.out.println("\t3: Record a visit by a prospective tenant.");
@@ -128,6 +126,12 @@ public class Manager {
             catch (SQLException sqle) {
                 System.out.println("[Error]: Database error. Please try again.");
                 sqle.printStackTrace();
+            }
+            catch (InputMismatchException e) {
+                System.out.println("[Error]: Error with input. Please try again.");
+            }
+            catch (Exception e) {
+                System.out.println("[Error]: Undefined error. Please try again.");
             }
         } while (conn == null);
 
@@ -146,17 +150,25 @@ public class Manager {
 
             // store all tenant ids into an arraylist
             ArrayList<String> idList = new ArrayList<String>(colCount);
-            while(ids.next()) {
-                int i = 1;
-                while(i <= colCount) {
-                    idList.add(ids.getString(i++));
+            if(ids.next() == false) {
+                // first tenant in DB
+                newTID = 1;
+                return newTID;
+
+            } else {
+                while(ids.next()) {
+                    int i = 1;
+                    while(i <= colCount) {
+                        idList.add(ids.getString(i++));
+                    }
                 }
+                // get lastID value, since we inserted numerically ordered, this should be the largest/last tennat
+                int lastID = Integer.parseInt(idList.get(idList.size() - 1));
+                // new ID is last + 1
+                newTID = lastID + 1;
+                return newTID;
             }
-            // get lastID value, since we inserted numerically ordered, this should be the largest/last tennat
-            int lastID = Integer.parseInt(idList.get(idList.size() - 1));
-            // new ID is last + 1
-            newTID = lastID + 1;
-            return newTID;
+            
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Error with Tenant Login.");
@@ -188,18 +200,18 @@ public class Manager {
 
             if(aptNums.contains(Integer.toString(apt_num))) {
                 // apartment is open for rent
-                System.out.println("Enter the tenant's Name: ");
+                System.out.println("Enter the Tenant's Name: ");
                 String name = in.nextLine();
-                System.out.println("Enter the tenant's SSN: ");
+                System.out.println("Enter the Tenant's SSN: (xxx-xx-xxxx)");
                 String ssn = in.nextLine();
-                System.out.println("Enter the tenant's Phone Number: ");
+                System.out.println("Enter the Tenant's Phone Number: (xxx-xxx-xxxx)");
                 String phone = in.nextLine();
-                System.out.println("Enter the tenant's Bank Routing: ");
+                System.out.println("Enter the Tenant's Bank Routing: ");
                 String bank = in.nextLine();
 
                  // insert into tenant table
                 int tenant_id = createTenantID(conn);
-                System.out.println("TENANT ID: "+ tenant_id);
+                // System.out.println("TENANT ID: "+ tenant_id);
                 String insertQ = "insert into tenant values (?, ?, ?, ?, ?)";
                 PreparedStatement pStmt6 = conn.prepareStatement(insertQ);
                 pStmt6.setInt(1, tenant_id);
@@ -232,10 +244,13 @@ public class Manager {
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Error with database.");
-            // sqle.printStackTrace();
+            sqle.printStackTrace();
         }
         catch (InputMismatchException e) {
             System.out.println("[Error]: Error with input. Please try again.");
+        }
+        catch (Exception e) {
+            System.out.println("[Error]: Undefined error. Please try again.");
         }
     }
 
@@ -296,11 +311,10 @@ public class Manager {
                     idList.add(rs.getString(i++));
                 }
             }
-
             // check ID is in validated list
             if(idList.contains(Integer.toString(tenant_id))) {
                 return tenant_id;
-            } 
+            }
 
         }
         catch (SQLException sqle) {
