@@ -57,7 +57,7 @@ public class Manager {
 
                         case 2:
                             // query to search for apartments that have a lease but no tenant (available for rent)
-                            String leaseQuery = "select apt_num, num_beds, num_baths, sq_foot, monthly_price, p_id from lease natural join apartment where apt_num not in (select apt_num from lives_in) order by p_id";
+                            String leaseQuery = "select apt_num, num_beds, num_baths, sq_foot, monthly_price, p_id from lease natural join apartment where apt_num not in (select apt_num from lives_in) order by p_id, apt_num";
                             PreparedStatement pStmt3 = conn.prepareStatement(leaseQuery);
                             ResultSet rs3 = pStmt3.executeQuery();
 
@@ -289,7 +289,7 @@ public class Manager {
         catch (InputMismatchException e) {
             System.out.println("[Error]: Error with input. Please try again.");
         }
-        in.close();
+        // in.close();
     }
 
 
