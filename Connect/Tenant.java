@@ -16,19 +16,19 @@ public class Tenant {
                  int choice;
                  do {
                      // interface menu
-                     System.out.println("Please select an option below:");
+                     System.out.println("Please select an option below: ");
                      System.out.println("\t1: Make a payment.");
                      System.out.println("\t2: View payment history.");
                      System.out.println("\t3: View complimentary amenities.");
-                     System.out.println("\t4: Add roommates");
-                     System.out.println("\t5: Move out");
+                     System.out.println("\t4: Add roommates.");
+                     System.out.println("\t5: Update personal information.");
                      System.out.println("\t0: Exit");
                      choice = Integer.parseInt(in.nextLine());
 
                      switch(choice) {
                         case 0: // quit - display exit message
                             System.out.println("Thank you for using the NUMA Tenant Interface!");
-                            System.out.println("[Exiting...]");
+                            System.out.println("Exiting...");
                             System.out.print("\033\143");
                             break;
                 
@@ -83,23 +83,8 @@ public class Tenant {
                             addRoommates(conn, t_id);
                             break;
 
-                        case 5: // move out
-                            System.out.println("Please confirm you would like to move out of your apartment (y/n): ");
-                            String confirm = in.nextLine(); 
-                            // validate input
-                            if(confirm.equalsIgnoreCase("y")) {
-                                // move out
-                                System.out.println("[Note]: All tenant information will be deleted upon move out.");
-                                System.out.println("[Update]: Move out successful.");
-                                moveOut(conn, t_id);
-                                break;
-
-                            } else if(confirm.equalsIgnoreCase("n")) {
-                                System.out.println("[Reverting to previous menu...]");
-
-                            } else {
-                                System.out.println("[Error]: Please enter an appropriate choice (y/n):");;
-                            }
+                        case 5: // update personal information
+                            updatePersonalInfo(conn, t_id);
                             break;
                         
                         default: // invalid input
@@ -107,8 +92,8 @@ public class Tenant {
                             System.out.println("\t1: Make a payment.");
                             System.out.println("\t2: View payment history.");
                             System.out.println("\t3: View complimentary amenities.");
-                            System.out.println("\t4: Add roommates");
-                            System.out.println("\t5: Move out");
+                            System.out.println("\t4: Add roommates.");
+                            System.out.println("\t5: Update personal information.");
                             System.out.println("\t0: Exit");
                             break;
                      }  
@@ -117,6 +102,12 @@ public class Tenant {
             catch (SQLException sqle) {
                 System.out.println("[Error]: Connect error. Please try again.");
                 sqle.printStackTrace();
+            }
+            catch (InputMismatchException e) {
+                System.out.println("[Error]: Error with input. Please try again.");
+            }
+            catch (Exception e) {
+                System.out.println("[Error]: Undefined error. Please try again.");
             }
 
         } while (conn == null);
@@ -165,6 +156,12 @@ public class Tenant {
             System.out.println("[Error]: Error with Tenant Login.");
             sqle.printStackTrace();
         }
+        catch (InputMismatchException e) {
+            System.out.println("[Error]: Error with input. Please try again.");
+        }
+        catch (Exception e) {
+            System.out.println("[Error]: Undefined error. Please try again.");
+        }
         return t_id;
     }
 
@@ -177,9 +174,9 @@ public class Tenant {
             try {
                 System.out.println("What payment method would you like to use?");
                 System.out.println("\t0: Quit Interface");
-                System.out.println("\t1: Credit Card (CC)");
-                System.out.println("\t2: Venmo (V)");
-                System.out.println("\t3: Cash (C)");
+                System.out.println("\t1: Credit Card");
+                System.out.println("\t2: Venmo");
+                System.out.println("\t3: ACH Payment");
                 int method = Integer.parseInt(in.nextLine());
 
                 switch(method) {
@@ -191,7 +188,6 @@ public class Tenant {
 
                     // add credit card
                     case 1:
-                        // set payment method as credit
                         String pQuery = "insert into payment (tenant_id, method) values (?, ?)";
                         PreparedStatement pStatement = conn.prepareStatement(pQuery);
                         pStatement.setInt(1, tenant_id);
@@ -250,14 +246,15 @@ public class Tenant {
                         }
                         break;
 
-                    // use cash
+                    // add ach payment
                     case 3:
                         pQuery = "insert into payment (tenant_id, method) values (?, ?)";
                         pStatement = conn.prepareStatement(pQuery);
                         pStatement.setInt(1, tenant_id);
-                        pStatement.setString(2, "Cash");
+                        pStatement.setString(2, "ACH");
                         
-                        System.out.println("Your default payment method is now set to be CASH.");
+                        // get ach info from user
+                        System.out.println("Your routing number ");
                         break;
 
                     // invalid input
@@ -269,11 +266,18 @@ public class Tenant {
                         System.out.println("\t3: Cash (C)");
                         break;
                 } 
+                in.close();
             }
             catch (SQLException sqle) {
                 System.out.println("[Error]: Connect error. Please try again.");
                 sqle.printStackTrace();
             }        
+            catch (InputMismatchException e) {
+                System.out.println("[Error]: Error with input. Please try again.");
+            }
+            catch (Exception e) {
+                System.out.println("[Error]: Undefined error. Please try again.");
+            }
         } while(paymentSet == false);
     }
 
@@ -447,15 +451,14 @@ public class Tenant {
             ResultSet rs1 = pStmt1.executeQuery();
             ResultSet rs2 = pStmt2.executeQuery();
 
-             System.out.println("Amenities Offered");
-             System.out.println("================");
-             System.out.println("Type\t\t\tTreadmills/Length\tPower Racks/Depth\tShowers/Lanes");
-             System.out.println("================");
-
              // print gym info
              if(rs1.next() == false) {
-
+                System.out.println("[Apologies]: We are currently working to get more amenities at your property.");
              } else {
+                System.out.println("\nAmenities Offered");
+                System.out.println("================");
+                System.out.println("Type\t\t\tTreadmills/Length\tPower Racks/Depth\tShowers/Lanes");
+                System.out.println("================");
                 do {
                     System.out.println(rs1.getString(1) + "\t\t\t" + rs1.getString(2) + "\t\t\t" + rs1.getString(3) + "\t\t\t" + rs1.getString(4));
                 } while(rs1.next());
@@ -464,7 +467,7 @@ public class Tenant {
             
              // print pool info
              if(rs2.next() == false) {
-
+                System.out.println("[Apologies]: We are currently working to get more amenities at your property.");
              } else {
                 do {
                     System.out.println(rs2.getString(1) + "\t\t\t" + rs2.getString(2) + "\t\t\t" + rs2.getString(3) + "\t\t\t" + rs2.getString(4));
@@ -481,7 +484,7 @@ public class Tenant {
 
         }
         catch (SQLException sqle) {
-            System.out.println("[Error]: Error with database. Please try again.");
+            System.out.println("[Error]: Error with database. Please try again.\n");
             sqle.printStackTrace();
         }
     }
@@ -529,47 +532,105 @@ public class Tenant {
             addpStmt.close();
         }
         catch (SQLException sqle) {
-            System.out.println("[Error]: Error with database. Please try again.");
-            sqle.printStackTrace();
+            System.out.println("[Error]: Error with database. Please try again.\n");
+            // sqle.printStackTrace();
         }
     }
 
 
-    // tenant move-out of building
-    public static void moveOut(Connection conn, int tenant_id) {
-        
+    // update personal information
+    public static void updatePersonalInfo(Connection conn, int tenant_id) {
+        Scanner in = new Scanner(System.in);
+        int choice;
         try {
-             // delete tenant from lives_in table
-            String deleteLivesInQ = "delete from lives_in where tenant_id = ?";
-            PreparedStatement pStmt1 = conn.prepareStatement(deleteLivesInQ);
-            pStmt1.setInt(1, tenant_id);
-            int deletedRows = pStmt1.executeUpdate();
-            if(deletedRows == 1) {
-                System.out.println("[Success]: You have successfully moved out of your apartment.");
+            System.out.println("What information would you like to update?");
+            System.out.println("\t0. Quit");
+            System.out.println("\t1. Phone Number");
+            System.out.println("\t2. Social Security Number (SSN)");
+            System.out.println("\t3. Bank Routing");
+            choice = Integer.parseInt(in.nextLine());
+
+            switch(choice) {
+                case 0: // quit interface
+                    System.out.println("Returing to Main Interface...");
+                    break;
+
+                case 1: // phone number
+                    System.out.println("Enter the new phone number you would like on record: (xxx-xxx-xxxx) ");
+                    String pNumber = in.nextLine();
+
+                    String phoneUpdate = "update tenant set phone = ? where tenant_id = ?";
+                    PreparedStatement pStmt = conn.prepareStatement(phoneUpdate);
+                    pStmt.setString(1, pNumber);
+                    pStmt.setInt(2, tenant_id);
+                    int rowsChanged = pStmt.executeUpdate();
+
+                    if(rowsChanged == 1) {
+                        System.out.println("[Update]: Phone number was updated in the database.");
+                    } else {
+                        System.out.println("[Error]: Phone number could not be updated. Please try again.");
+                    }
+
+                    pStmt.close();
+                    break;
+
+                case 2: // ssn
+                    System.out.println("Enter the SSN you would like on record: (xxx-xx-xxxx)");
+                    String ssn = in.nextLine();
+
+                    String emailUpdate = "update tenant set ssn = ? where tenant_id = ?";
+                    PreparedStatement pStmt1 = conn.prepareStatement(emailUpdate);
+                    pStmt1.setString(1, ssn);
+                    pStmt1.setInt(2, tenant_id);
+                    rowsChanged = pStmt1.executeUpdate();
+
+                    if(rowsChanged == 1) {
+                        System.out.println("[Update]: Your SSN was updated in the system.");
+                    } else {
+                        System.out.println("[Error]: SSN could not be updated. Please try again.\n");
+                    }
+
+                    pStmt1.close();
+                    break;
+
+                case 3: // bank routing
+                    System.out.println("Enter your new Bank Routing Number: (at least 5 digits)");
+                    String routing = in.nextLine();
+
+                    String routingUpdate = "update tenant set routing = ? where tenant_id = ?";
+                    PreparedStatement pStmt2 = conn.prepareStatement(routingUpdate);
+                    pStmt2.setString(1, routing);
+                    pStmt2.setInt(2, tenant_id);
+                    rowsChanged = pStmt2.executeUpdate();
+
+                    if(rowsChanged == 1) {
+                        System.out.println("[Update]: Your Bank Routing Number was updated in the system.");
+                    } else {
+                        System.out.println("[Error]: Routing Number could not be updated. Please try again.\n");
+                    }
+
+                    pStmt2.close();
+                    break;
+
+                default:
+                    System.out.println("Please make a valid selection: ");  
+                    System.out.println("\t0. Quit");
+                    System.out.println("\t1. Phone Number");
+                    System.out.println("\t2. Email Address");
+                    System.out.println("\t3. Bank Routing");
+                    break;
             }
-
-            // delete tenant from specific payment, then payment table
-
-            // delete tenant from tenant table
-            // String deleteTenantQ = "delete from tenant where tenant_id = ?";
-            // PreparedStatement pStmt2 = conn.prepareStatement(deleteTenantQ);
-            // pStmt2.setInt(1, tenant_id);
-            // deletedRows = pStmt2.executeUpdate();
-            // if(deletedRows == 1) {
-            //     System.out.println("[Success]: You have successfully moved out of your apartment.");
-            // }
-
-            // close statements
-            pStmt1.close();
 
         }
         catch (SQLException sqle) {
-            System.out.println("[Error]: Connect error. Please try again.");
-            sqle.printStackTrace();
+            System.out.println("[Error]: Error with database. Please try again.");
         }
-    
+        catch (InputMismatchException e) {
+            System.out.println("[Error]: Input Mismatch Error. Please try again.");
+        }
+        catch (Exception e) {
+            System.out.println("[Error]: Undefined error. Please try again.");
+        }
     }
-
-
     
 }
