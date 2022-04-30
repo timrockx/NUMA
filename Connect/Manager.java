@@ -35,7 +35,6 @@ public class Manager {
 
                         case 1:
                             // execute query to return ALL property listings
-                            System.out.println("All property listings in the area:\n");
                             String propertyQuery = "select * from property";
                             PreparedStatement pStmt = conn.prepareStatement(propertyQuery);
                             ResultSet rs1 = pStmt.executeQuery();
@@ -44,7 +43,7 @@ public class Manager {
                                 System.out.println("[Error]: No properties found in NUMA System.\n");
                             } else {
                                 // display results
-                                System.out.println("Properties in NUMA Enterprises: ");
+                                System.out.println("\nProperties in NUMA Enterprises: ");
                                 System.out.println("================");
                                 System.out.println("Property ID\tStreet\t\t\tCity\t\t\tState\t\tNum. Apts.\t\t");
 
@@ -66,9 +65,9 @@ public class Manager {
 
                             } else {
                                 // display results
-                                System.out.println("Apartments for Rent in NUMA Enterprises: ");
+                                System.out.println("\nApartments for Rent in NUMA Enterprises: ");
                                 System.out.println("================");
-                                System.out.println("Apt. Num\tBeds\t\tBaths\t\tSq. Ft.\t\tPrice (per M)\t\tProperty ID");
+                                System.out.println("Apt. Num\tBeds\t\tBaths\t\tSq. Ft.\t\tPrice ($/M)\t\tProperty ID");
 
                                 do {
                                     System.out.println(rs3.getString(1) + "\t\t" + rs3.getString(2) + "\t\t" + rs3.getString(3) + "\t\t" + rs3.getString(4) + "\t\t" + rs3.getString(5) + "\t\t\t" + rs3.getString(6));
@@ -125,7 +124,7 @@ public class Manager {
             }
             catch (SQLException sqle) {
                 System.out.println("[Error]: Database error. Please try again.");
-                sqle.printStackTrace();
+                // sqle.printStackTrace();
             }
             catch (InputMismatchException e) {
                 System.out.println("[Error]: Error with input. Please try again.");
@@ -141,38 +140,21 @@ public class Manager {
     public static int createTenantID(Connection conn) {
         int newTID = 0;
         try {
-            // get all tenant ids 
-            String loginQ = "select tenant_id from tenant order by cast(tenant_id as int)";
-            PreparedStatement loginP = conn.prepareStatement(loginQ);
-            ResultSet ids = loginP.executeQuery();
-            ResultSetMetaData rsmd = ids.getMetaData();
-            int colCount = rsmd.getColumnCount();
+            String loginQ = "select max(tenant_id) from tenant";
+            PreparedStatement pStmt = conn.prepareStatement(loginQ);
+            ResultSet rs = pStmt.executeQuery();
 
-            // store all tenant ids into an arraylist
-            ArrayList<String> idList = new ArrayList<String>(colCount);
-            if(ids.next() == false) {
-                // first tenant in DB
-                newTID = 1;
+            if(rs.next()) {
+                newTID = rs.getInt(1) + 1;
                 return newTID;
 
             } else {
-                while(ids.next()) {
-                    int i = 1;
-                    while(i <= colCount) {
-                        idList.add(ids.getString(i++));
-                    }
-                }
-                // get lastID value, since we inserted numerically ordered, this should be the largest/last tennat
-                int lastID = Integer.parseInt(idList.get(idList.size() - 1));
-                // new ID is last + 1
-                newTID = lastID + 1;
-                return newTID;
+                newTID = 1;
             }
-            
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Error with Tenant Login.");
-            sqle.printStackTrace();
+            // sqle.printStackTrace();
         }
         return newTID;
     }
@@ -289,7 +271,7 @@ public class Manager {
         catch (InputMismatchException e) {
             System.out.println("[Error]: Error with input. Please try again.");
         }
-        // in.close();
+        
     }
 
 
@@ -320,7 +302,6 @@ public class Manager {
         catch (SQLException sqle) {
             System.out.println("[Error]: Error with database.");
             // sqle.printStackTrace();
-
         }
         return 0;
     }
