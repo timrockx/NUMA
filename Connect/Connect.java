@@ -1,7 +1,7 @@
 import java.sql.*;
 import java.util.*;
 
-
+// main class to handle landing page, then redirect to different interfaces
 public class Connect {
 
     // static string for link to database
@@ -25,50 +25,67 @@ public class Connect {
                 System.out.print("\033\143");
                 System.out.println("Connection successful!\n");
 
-                // switch case for which interface to access
-                System.out.println("Select the interface you would like to use: ");
-                System.out.println("1. Property Manager");
-                System.out.println("2. Tenant");
-                System.out.println("3. NUMA Manager");   
-                
-                // get user's choice for interface
-                int choice = Integer.parseInt(in.nextLine());
-                switch (choice) {
-                    case 1:
-                        System.out.print("\033\143");
-                        System.out.println("------Property Manager Interface------");
-                        // call to property manager class
-                        Manager.managerInterface(conn);
+                int choice;
+                do {
+                    // switch case for which interface to access
+                    System.out.println("Select the interface you would like to use: ");
+                    System.out.println("\t0. Quit Program");
+                    System.out.println("\t1. Property Manager");
+                    System.out.println("\t2. Tenant");
+                    System.out.println("\t3. NUMA Manager");   
+                    
+                    // get user's choice for interface
+                    choice = Integer.parseInt(in.nextLine());
+                    switch (choice) {
+                        case 0:
+                            System.out.println("Exiting NUMA Enterprises. Goodbye!");
+                            break;
+
+                        case 1:
+                            System.out.print("\033\143");
+                            System.out.println("------Property Manager Interface------");
+                            // call to property manager class
+                            Manager.managerInterface(conn);
+                            break;
+
+                        case 2:
+                            System.out.print("\033\143");
+                            System.out.println("------Tenant Interface------");
+                            // call to tenant class
+                            Tenant.tenantInterface(conn);
+                            break;
                         
-                        break;
+                        case 3:
+                            System.out.print("\033\143");
+                            System.out.println("------NUMA Manager Interface------");
+                            // call to numaManager class
+                            numaManager.numaManagerInterface(conn);
+                            break;
+                        
+                        default:
+                            System.out.println("Please make a proper selection (0-3).");
+                            System.out.println("\t0. Quit Program");
+                            System.out.println("\t1. Property Manager");
+                            System.out.println("\t2. Tenant");
+                            System.out.println("\t3. NUMA Manager"); 
+                            break;
+                    }
 
-                    case 2:
-                        System.out.print("\033\143");
-                        System.out.println("------Tenant Interface------");
-                        // call to tenant class
-                        Tenant.tenantInterface(conn);
-                        break;
-                    
-                    case 3:
-                        System.out.print("\033\143");
-                        System.out.println("------NUMA Manager Interface------");
-                        // call to manager class
-                        break;
-                    
-                    default:
-                        System.out.println("Please make a proper selection (1-3).");
-                        System.out.println("1. Property Manager");
-                        System.out.println("2. Tenant");
-                        System.out.println("3. NUMA Manager");
-                        break;
-                }
+                } while(choice != 0);
 
+                // close database connection after user quits
                 conn.close();
-
+                
             }
             catch (SQLException sqle) {
-                // sqle.printStackTrace();
                 System.out.println("[Error]: Connect error. Please try again.");
+                 // sqle.printStackTrace();
+            }
+            catch (InputMismatchException exp) {
+                System.out.println("[Error]: Input Mismatch Error. Please try again.");
+            }
+            catch (Exception e) {
+                System.out.println("[Error]: Unknown error. Please try again.");
             }
 
         } while(conn == null);
