@@ -1,4 +1,5 @@
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.*;
 
 public class Tenant {
@@ -219,6 +220,7 @@ public class Tenant {
                         } else {
                             System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
                         }
+                        pStmt.close();
                         break;
 
                     case 2: // venmo
@@ -236,6 +238,7 @@ public class Tenant {
                         } else {
                             System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
                         }
+                        pStmt1.close();
                         break;
 
                     case 3: // ach
@@ -253,6 +256,7 @@ public class Tenant {
                         } else {
                             System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
                         }
+                        pStmt2.close();
                         break;
 
                     default: // invalid input
@@ -314,14 +318,37 @@ public class Tenant {
                             System.out.println("[Error]: Payment could not be updated. Please try again..");
                         }
 
+                        pStatement.close();
+
                         // collect credit card info
-                        System.out.println("Enter the Credit Card Number: ");
-                        String ccNum = in.nextLine();
-                        System.out.println("Enter the Expiration Date: (MM/YY) ");
-                        String expDate = in.nextLine();
-                        System.out.println("Enter the CVV: (XXX)");
-                        String cvv = in.nextLine();
-        
+                        boolean validCC = false;
+                        String ccNum = "";
+                        String expDate = "";
+                        String cvv = "";
+                        do {
+
+                            System.out.println("Enter the Credit Card Number: ");
+                            ccNum = in.nextLine();
+                            if(!ccNum.matches("^[0-9]{16}$")) {
+                                System.out.println("[Error]: Invalid Credit Card Number. Please try again.");
+                                continue;
+                            }
+                            System.out.println("Enter the Expiration Date: (MM/YY) ");
+                            expDate = in.nextLine();
+                            if(!expDate.matches("^[0-1]{1}[0-9]{1}/[0-9]{2}$")) {
+                                System.out.println("[Error]: Invalid Expiration Date. Please try again.");
+                                continue;
+                            }
+                            System.out.println("Enter the CVV: (XXX)");
+                            cvv = in.nextLine();
+                            if(!cvv.matches("^[0-9]{3}$")) {
+                                System.out.println("[Error]: Invalid CVV. Please try again.");
+                                continue;
+                            }
+                            validCC = true;
+
+                        } while(!validCC);
+
                         // add cc info to tables
                         String ccQuery = "insert into credit (tenant_id, card_num, exp_date, cvv) values (?, ?, ?, ?)";
                         PreparedStatement pStmt = conn.prepareStatement(ccQuery);
@@ -339,6 +366,8 @@ public class Tenant {
                         else {
                             System.out.println("[Error]: Payment failed to add. Please login to our portal and try again.");
                         }
+                        pStmt.close();
+
                         break;
                     
                     // add venmo
@@ -355,6 +384,8 @@ public class Tenant {
                         } else {
                             System.out.println("[Error]: Payment could not be updated. Please try again..");
                         }
+
+                        pStatement.close();
 
                         // get venmo info from user
                         System.out.println("What is your venmo username? ");
@@ -374,6 +405,8 @@ public class Tenant {
                         } else {
                             System.out.println("[Error]: Payment failed to add. Please go through our portal again and try again.");
                         }
+                        pStmt1.close();
+
                         break;
 
                     // add ach payment
@@ -390,6 +423,8 @@ public class Tenant {
                         } else {
                             System.out.println("[Error]: Payment could not be updated. Please try again..");
                         }
+
+                        pStatement.close();
                         
                         String routingQ = "select bank from tenant where tenant_id = ?";
                         PreparedStatement pStmt2 = conn.prepareStatement(routingQ);
@@ -399,6 +434,10 @@ public class Tenant {
                         while(rs.next()) {
                             accNum = rs.getString(1);
                         }
+
+                        pStmt2.close();
+                        rs.close();
+
                         // get ach info from user
                         System.out.println("Your account number on file is: " + accNum);
                         System.out.println("Enter your routing number: ");
@@ -418,6 +457,7 @@ public class Tenant {
                         } else {
                             System.out.println("[Error]: Payment failed to add. Please go through our portal again and try again.");
                         }
+                        pStmt3.close();
 
                         break;
 
@@ -460,7 +500,6 @@ public class Tenant {
                  ResultSet rs1 = pStatement.executeQuery();
                  int monthly_price = 0;
  
-                 // get monthly_price and store in local var
                  if(rs1.next() == false) {
                      System.out.println("[Error]: Failed to retrieve your monthly lease price. Please try again.");
                      break;
@@ -477,7 +516,9 @@ public class Tenant {
                 lastPayStmt.setInt(1, tenant_id);
                 ResultSet lastPayRS = lastPayStmt.executeQuery();
                 int last_paid = 0;
-                // java.sql.Date datePaid = null;
+                java.sql.Date datePaid = null;
+                LocalDate nextPaymentDate = null;
+                LocalDate currDate = LocalDate.now();
                 int amountDue = 0;
 
                 if(lastPayRS.next() == false) {
@@ -518,12 +559,16 @@ public class Tenant {
                 } else {
                     // either make no payment (balance 0) or make payment on remaining balance
                     last_paid = lastPayRS.getInt("amount");
-                    // datePaid = lastPayRS.getDate("date_paid");
+                    datePaid = lastPayRS.getDate("date_paid");
+                    // add 1 month to datePaid
+                    nextPaymentDate = datePaid.toLocalDate();
+                    nextPaymentDate.plusMonths(1);
 
-                    if(last_paid == monthly_price) {
+                    // calculate amount due
+                    if((last_paid == monthly_price) && (nextPaymentDate.isAfter(currDate))) {
                         System.out.println("[Note]: You have already paid for this month. Remaining balance is 0.\n");
                         paymentMade = true;
-                    } else if(last_paid < monthly_price) {
+                    } else if((last_paid < monthly_price) && (nextPaymentDate.isAfter(currDate))) {
                         amountDue = monthly_price - last_paid;
                         System.out.println("[Not: You have a balance of $" + amountDue + " due. Would you like to pay now? (y/n) ");
                         String payNow = in.nextLine();
