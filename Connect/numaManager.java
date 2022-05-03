@@ -76,6 +76,7 @@ public class numaManager {
             String street, city, state, zip;
             int numApartments, p_id;
             int addedApartments = 0;
+            int addedLeases = 0;
             do {
                 System.out.println("------Add a new property------");
                 // get basic info to add to propety table
@@ -103,6 +104,7 @@ public class numaManager {
                 pStmt.setString(5, zip);
                 pStmt.setInt(6, numApartments);
                 int rowsChanged = pStmt.executeUpdate();
+
                 if(rowsChanged == 1) {
                     System.out.println("[Update]: Property added successfully!");
                     propAdded = true;
@@ -113,57 +115,41 @@ public class numaManager {
                 }
 
             } while (!propAdded);
-
-            System.out.println("outside while loop");
             
             // for each apartment we insert into the apartment table
             for(int i = 1; i < numApartments; i++) {
                 // generate apt_num
-                System.out.println("inside for loop");
-
                 int apt_num = createAptNum(conn, numApartments);
                 if(apt_num == 0) {
                     System.out.println("[Error]: Could not generate apartment number.");
                     break;
                 }
 
-                System.out.println("apt num" + apt_num);
-
                 // number of beds
                 int [] beds = {1, 2, 3};
                 int ind = new Random().nextInt(beds.length);
                 int numBeds = beds[ind];
-
-                System.out.println("num beds" + numBeds);
 
                 // number of baths
                 double [] baths = {1, 1.5, 2, 2.5};
                 ind = new Random().nextInt(baths.length);
                 double numBaths = baths[ind];
 
-                System.out.println("num baths" + numBaths);
-
                 // sq footage
                 int sq_foot = 0;
                 if(numBeds == 1 && (numBaths == 1 || numBaths == 1.5 )) {
                     // range 700 - 850
                     sq_foot = new Random().nextInt(150) + 700;
-
                 } else if(numBeds == 2 && (numBaths == 1.5 || numBaths == 2)) {
                     // range 850 - 1100
                     sq_foot = new Random().nextInt(250) + 850;
-
                 } else if(numBeds == 3 && (numBaths == 2 || numBaths == 2.5)) {
                     // range 1100 - 1400
                     sq_foot = new Random().nextInt(300) + 1100;
-
                 } else {
                     // default range 700-950
                     sq_foot = new Random().nextInt(250) + 700;
                 }
-
-
-                System.out.println("before insert");
 
                 String addAptQ = "insert into apartment values (?, ?, ?, ?, ?)";
                 PreparedStatement pStmt = conn.prepareStatement(addAptQ);
@@ -174,23 +160,59 @@ public class numaManager {
                 pStmt.setInt(5, p_id);
                 int rowsChanged = pStmt.executeUpdate();
 
-                System.out.println("after execute update");
-
                 if(!(rowsChanged == 1)) {
                     System.out.println("[Error]: Apartment could not be added.");
                 } else {
-                    System.out.println("[Update]: Apartment added successfully!");
+                    // System.out.println("[Update]: Apartment added successfully!");
                     addedApartments++;
                 }
+
+                // add corresponding lease for each apartment
+                int [] durationChoices = {12, 24, 36};
+                int duration = durationChoices[new Random().nextInt(durationChoices.length)];
+
+                int monthly_price;
+                if(sq_foot <= 900) {
+                    // between 3k to 4k
+                    monthly_price = new Random().nextInt(1000) + 3000;
+                } else if(sq_foot > 900 && sq_foot <= 1150) {
+                    // bewteen 4k to 5k
+                    monthly_price = new Random().nextInt(1000) + 4000;
+                } else if(sq_foot > 1150 && sq_foot <= 1300) {
+                    // between 5k to 7.5k
+                    monthly_price = new Random().nextInt(2500) + 5000;
+                } else if(sq_foot > 1300 ) {
+                    // between 7.5k to 10k
+                    monthly_price = new Random().nextInt(2500) + 7500;
+                } else {
+                    // default is 5k a month
+                    monthly_price = new Random().nextInt(1000) + 3000;
+                }
+
+                // insert into lease table
+                String leaseQ = "insert into lease values (?, ?, ?)";
+                PreparedStatement pStmt2 = conn.prepareStatement(leaseQ);
+                pStmt2.setInt(1, apt_num);
+                pStmt2.setInt(2, monthly_price);
+                pStmt2.setInt(3, duration);
+
+                int rowsChanged2 = pStmt2.executeUpdate();
+                if(rowsChanged2 == 1) {
+                    // System.out.println("[Update]: Lease added successfully!");
+                    addedLeases++;
+                } else {
+                    System.out.println("[Error]: Lease for Apartment " + apt_num + " could not be added.");
+                }
             }
-            if(addedApartments == numApartments) {
+
+            if((addedApartments == numApartments) && (addedLeases == addedApartments)) {
                 System.out.println("[Update]: All apartments were added successfully!");
             }
             
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Database error. Please try again.");
-            sqle.printStackTrace();
+            // sqle.printStackTrace();
         }
         catch (InputMismatchException e) {
             System.out.println("[Error]: Invalid input. Please try again.");
@@ -200,7 +222,6 @@ public class numaManager {
             System.out.println("[Error]: Invalid input. Please try again.");
             //e.printStackTrace();
         }
-
 
     }
 
@@ -411,40 +432,22 @@ public class numaManager {
     // generate new apartment num when adding a new apartment
     public static int createAptNum(Connection conn, int numApts) {
         int apt_num = 0;
-        System.out.println("inside create apt num fn");
         try {
-            String query = "select apt_num from apartment";
+            String query = "select max(apt_num) from apartment";
             PreparedStatement pStmt = conn.prepareStatement(query);
             ResultSet rs = pStmt.executeQuery();
-            ArrayList <String> apartmentNums = new ArrayList<>();
-            while(rs.next()) {
-                apartmentNums.add(rs.getString(1));
-            }
-            boolean valid = false;
 
-            System.out.println("before while loop");
-
-            while(!valid) {
-                apt_num = new Random().nextInt(numApts) + 1;
-                if(apartmentNums.contains(Integer.toString(apt_num))) {
-                    valid = false;
-                    System.out.println("contains");
-                } else {
-                    System.out.println("valid");
-                    valid = true;
-                    return apt_num;
-                }
-            }
-            System.out.println("outsiude while");
-
+            // get the max apt_num, then add one during each iteration
+            if(rs.next()) {
+                apt_num = rs.getInt(1);
+            } 
+            apt_num++;
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Database error. Please try again.");
             // sqle.printStackTrace();
         }
-        System.out.println("return stmt");
         return apt_num;
-
     }
        
 
