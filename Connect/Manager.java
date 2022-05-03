@@ -49,7 +49,7 @@ public class Manager {
                                 System.out.println("Property ID\tStreet\t\t\tCity\t\t\tState\t\tZip Code\t\t# Apts.");
 
                                 do {
-                                    System.out.println(rs1.getString(1) + "\t\t" + rs1.getString(2) + "\t\t" + rs1.getString(3) + "\t\t" + rs1.getString(4) + "\t\t" + rs1.getString(5) + "\t" + rs1.getString(6) + "\t\t");
+                                    System.out.println(rs1.getString(1) + "\t\t" + rs1.getString(2) + "\t\t" + rs1.getString(3) + "\t\t" + rs1.getString(4) + "\t\t" + rs1.getString(5) + "\t\t\t" + rs1.getString(6) + "\t\t");
                                 } while(rs1.next());
                                 System.out.println();
                             }
