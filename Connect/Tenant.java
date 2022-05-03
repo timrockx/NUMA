@@ -33,42 +33,43 @@ public class Tenant {
                             break;
                 
                         case 1: // make payment on rent
-                            String pMethodQ = "select * from payment where tenant_id = ?";
-                            PreparedStatement pStmt = conn.prepareStatement(pMethodQ);
-                            pStmt.setInt(1, t_id);
-                            ResultSet rs1 = pStmt.executeQuery();
-
-                            // if payment method is not set, set it
-                            if(rs1.next() == false) {
+                            String paymentMethod = getPaymentMethod(conn, t_id);
+                            
+                            if(paymentMethod.isEmpty()) {
+                                // no payment method set
                                 System.out.println("[Note]: You do not have a payment method on file. Would you like to add one? (y/n)");
                                 String answer = in.nextLine();
                                 if(answer.equalsIgnoreCase("y")) {
                                     // add payment method
                                     addPayment(conn, t_id);
+                                    if(!getPaymentMethod(conn, t_id).isEmpty()) {
+                                        paymentMethod = getPaymentMethod(conn, t_id);
+                                    }
+                                    // make payment after setting method
+                                    makePayment(conn, t_id, paymentMethod);
+                                    
                                 } else {
                                     // quit, we need payment method
                                     System.out.println("[Note]: A payment method is required before making a payment. Please try again.");
                                     break;
                                 }
 
-                            // if payment method is set, we retrieve then use it to pay
                             } else {
-                                String payMethod = rs1.getString(2);
-                                System.out.println("Your payment method on file is: " + payMethod + ". Would you like to use this to pay? (y/n)");
+                                // payment method is set
+                                System.out.println("Your payment method on file is: " + paymentMethod + ". Would you like to use this to pay? (y/n)");
                                 String option = in.nextLine();
                                 if(option.equalsIgnoreCase("y")) {
                                     // process payment with payMethod
-                                    makePayment(conn, t_id, payMethod);
+                                    makePayment(conn, t_id, paymentMethod);
                                     
                                 } else if(option.equalsIgnoreCase("n")) {
-                                    System.out.println("[Redirect]: Redirecting to update payment method.");
+                                    System.out.println("[Redirect]: Redirecting to Update Payment.");
                                     // call updatePayment method 
-                                    addPayment(conn, t_id);
+                                    updatePayment(conn, t_id);
                                     // after setting payment method, make payment
-                                    makePayment(conn, t_id, payMethod);
+                                    makePayment(conn, t_id, paymentMethod);
                                 }
                             }
-                            pStmt.close();
                             break;
 
                         case 2: // view payment history
@@ -99,15 +100,12 @@ public class Tenant {
                      }  
                 } while (choice != 0);
             }
-            catch (SQLException sqle) {
-                System.out.println("[Error]: Connect error. Please try again.");
-                sqle.printStackTrace();
-            }
             catch (InputMismatchException e) {
                 System.out.println("[Error]: Error with input. Please try again.");
             }
             catch (Exception e) {
                 System.out.println("[Error]: Undefined error. Please try again.");
+                e.printStackTrace();
             }
 
         } while (conn == null);
@@ -165,6 +163,121 @@ public class Tenant {
         return t_id;
     }
 
+    // update payment method
+    public static void updatePayment(Connection conn, int tenant_id) {
+        Scanner in = new Scanner(System.in);
+        String paymentMethod = "";
+        int paymentMethodId = -1;
+        try {
+            // get original payment method
+            paymentMethod = getPaymentMethod(conn, tenant_id);
+
+           if(paymentMethod.equals("Credit")) {
+                paymentMethodId = 1;
+           } else if(paymentMethod.equals("Venmo")) {
+               paymentMethodId = 2;
+           } else if(paymentMethod.equals("ACH")) {
+                paymentMethodId = 3;
+           } else {
+           }
+
+           boolean updatedPayment = false;
+           int method;
+           do {
+               do {
+                    System.out.println("What payment method would you like to use instead?");
+                    System.out.println("\t0: Quit Interface");
+                    System.out.println("\t1: Credit Card");
+                    System.out.println("\t2: Venmo");
+                    System.out.println("\t3: ACH Payment");
+                    method = Integer.parseInt(in.nextLine());
+
+                    if(method == paymentMethodId) {
+                        System.out.println("[Error]: You already have this payment method on file.");
+                    }
+
+               } while(method == paymentMethodId);
+
+                switch(method) {
+                    case 0: // quit
+                        System.out.println("[Exiting]: Exiting Interface.");
+                        updatedPayment = true;
+                        break;
+
+                    case 1: // credit card
+                        paymentMethod = "Credit";
+                        String updateQ = "update payment set pay_method = ? where tenant_id = ?";
+                        PreparedStatement pStmt = conn.prepareStatement(updateQ);
+                        pStmt.setString(1, paymentMethod);
+                        pStmt.setInt(2, tenant_id);
+                        int rowsChanged = pStmt.executeUpdate();
+            
+                        if(rowsChanged == 1) {
+                            System.out.println("[Success]: Payment method updated to: " + paymentMethod);
+                            updatedPayment = true;
+
+                        } else {
+                            System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
+                        }
+                        break;
+
+                    case 2: // venmo
+                        paymentMethod = "Venmo";
+                        updateQ = "update payment set pay_method = ? where tenant_id = ?";
+                        PreparedStatement pStmt1 = conn.prepareStatement(updateQ);
+                        pStmt1.setString(1, paymentMethod);
+                        pStmt1.setInt(2, tenant_id);
+                        rowsChanged = pStmt1.executeUpdate();
+            
+                        if(rowsChanged == 1) {
+                            System.out.println("[Success]: Payment method updated to: " + paymentMethod);
+                            updatedPayment = true;
+
+                        } else {
+                            System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
+                        }
+                        break;
+
+                    case 3: // ach
+                        paymentMethod = "ACH";
+                        updateQ = "update payment set pay_method = ? where tenant_id = ?";
+                        PreparedStatement pStmt2 = conn.prepareStatement(updateQ);
+                        pStmt2.setString(1, paymentMethod);
+                        pStmt2.setInt(2, tenant_id);
+                        rowsChanged = pStmt2.executeUpdate();
+            
+                        if(rowsChanged == 1) {
+                            System.out.println("[Success]: Payment method updated to: " + paymentMethod);
+                            updatedPayment = true;
+
+                        } else {
+                            System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
+                        }
+                        break;
+
+                    default: // invalid input
+                        System.out.println("[Error]: Please make a proper selection: ");
+                        System.out.println("\t1: Credit Card");
+                        System.out.println("\t2: Venmo");
+                        System.out.println("\t3: ACH Payment");
+                        break;
+                }
+
+           } while(updatedPayment == false);
+
+        }
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Error with Update Payment.");
+            // sqle.printStackTrace();
+        }
+        catch (InputMismatchException e) {
+            System.out.println("[Error]: Error with input. Please try again.");
+        }
+        catch (Exception e) {
+            System.out.println("[Error]: Undefined error. Please try again.");
+        }
+    }
+
     // add a payment method to a tenant's account
     public static void addPayment(Connection conn, int tenant_id) {
         Scanner in = new Scanner(System.in);
@@ -188,10 +301,18 @@ public class Tenant {
 
                     // add credit card
                     case 1:
-                        String pQuery = "insert into payment (tenant_id, method) values (?, ?)";
+                        String pQuery = "insert into payment (tenant_id, pay_method) values (?, ?)";
                         PreparedStatement pStatement = conn.prepareStatement(pQuery);
                         pStatement.setInt(1, tenant_id);
                         pStatement.setString(2, "Credit");
+                        int rowsChanged = pStatement.executeUpdate();
+
+                        if(rowsChanged == 1) {
+                            System.out.println("[Update]: Payment method was set to CREDIT. Please enter your CC Info Below." );
+                            
+                        } else {
+                            System.out.println("[Error]: Payment could not be updated. Please try again..");
+                        }
 
                         // collect credit card info
                         System.out.println("Enter the Credit Card Number: ");
@@ -201,19 +322,19 @@ public class Tenant {
                         System.out.println("Enter the CVV: (XXX)");
                         String cvv = in.nextLine();
         
-                        // add cc info to db
+                        // add cc info to tables
                         String ccQuery = "insert into credit (tenant_id, card_num, exp_date, cvv) values (?, ?, ?, ?)";
                         PreparedStatement pStmt = conn.prepareStatement(ccQuery);
-                        // set arguments for cc info
                         pStmt.setInt(1, tenant_id);
                         pStmt.setString(2, ccNum);
                         pStmt.setString(3, expDate);
                         pStmt.setString(4, cvv);
-        
+
                         // check output, must change 1 row to be successful
-                        int rowsChanged = pStmt.executeUpdate();
+                        rowsChanged = pStmt.executeUpdate();
                         if(rowsChanged == 1) {
-                            System.out.println("Payment added successfully!");
+                            System.out.println("[Update]: Payment added successfully!");
+                            paymentSet = true;
                         }
                         else {
                             System.out.println("[Error]: Payment failed to add. Please login to our portal and try again.");
@@ -222,15 +343,23 @@ public class Tenant {
                     
                     // add venmo
                     case 2:
-                        pQuery = "insert into payment (tenant_id, method) values (?, ?)";
+                        pQuery = "insert into payment (tenant_id, pay_method) values (?, ?)";
                         pStatement = conn.prepareStatement(pQuery);
                         pStatement.setInt(1, tenant_id);
                         pStatement.setString(2, "Venmo");
+
+                        rowsChanged = pStatement.executeUpdate();
+                        if(rowsChanged == 1) {
+                            System.out.println("[Update]: Payment method was set to VENMO. Please enter your Venmo Info Below." );
+                            
+                        } else {
+                            System.out.println("[Error]: Payment could not be updated. Please try again..");
+                        }
+
                         // get venmo info from user
                         System.out.println("What is your venmo username? ");
                         String vUser = in.nextLine();
         
-                        // create venmo query
                         String vQuery = "insert into venmo (tenant_id, username) values (?, ?)";
                         PreparedStatement pStmt1 = conn.prepareStatement(vQuery);
                         // set arguments for venmo account
@@ -240,21 +369,56 @@ public class Tenant {
                         // check output for success
                         rowsChanged = pStmt1.executeUpdate();
                         if (rowsChanged == 1) {
-                            System.out.println("Payment added successfully!");
+                            System.out.println("[Update]: Payment added successfully!");
+                            paymentSet = true;
                         } else {
-                            System.out.println("Payment failed to add. Please go through our portal again and try again.");
+                            System.out.println("[Error]: Payment failed to add. Please go through our portal again and try again.");
                         }
                         break;
 
                     // add ach payment
                     case 3:
-                        pQuery = "insert into payment (tenant_id, method) values (?, ?)";
+                        pQuery = "insert into payment (tenant_id, pay_method) values (?, ?)";
                         pStatement = conn.prepareStatement(pQuery);
                         pStatement.setInt(1, tenant_id);
                         pStatement.setString(2, "ACH");
+
+                        rowsChanged = pStatement.executeUpdate();
+                        if(rowsChanged == 1) {
+                            System.out.println("[Update]: Payment method was set to ACH. Please enter your ACH Info Below." );
+                            
+                        } else {
+                            System.out.println("[Error]: Payment could not be updated. Please try again..");
+                        }
                         
+                        String routingQ = "select bank from tenant where tenant_id = ?";
+                        PreparedStatement pStmt2 = conn.prepareStatement(routingQ);
+                        pStmt2.setInt(1, tenant_id);
+                        ResultSet rs = pStmt2.executeQuery();
+                        String accNum = "";
+                        while(rs.next()) {
+                            accNum = rs.getString(1);
+                        }
                         // get ach info from user
-                        System.out.println("Your routing number ");
+                        System.out.println("Your account number on file is: " + accNum);
+                        System.out.println("Enter your routing number: ");
+                        String routingNum = in.nextLine();
+
+                        String achQuery = "insert into ach (tenant_id, routing_num) values (?, ?)";
+                        PreparedStatement pStmt3 = conn.prepareStatement(achQuery);
+                        // set arguments for ach account
+                        pStmt3.setInt(1, tenant_id);
+                        pStmt3.setString(2, routingNum);
+                        
+                        // check output for success
+                        rowsChanged = pStmt3.executeUpdate();
+                        if (rowsChanged == 1) {
+                            System.out.println("[Update]: Payment added successfully!");
+                            paymentSet = true;
+                        } else {
+                            System.out.println("[Error]: Payment failed to add. Please go through our portal again and try again.");
+                        }
+
                         break;
 
                     // invalid input
@@ -266,7 +430,7 @@ public class Tenant {
                         System.out.println("\t3: Cash (C)");
                         break;
                 } 
-                in.close();
+
             }
             catch (SQLException sqle) {
                 System.out.println("[Error]: Connect error. Please try again.");
@@ -430,7 +594,7 @@ public class Tenant {
         }
         catch(SQLException sqle) {
             System.out.println("[Error]: Error with database. Please try again.");
-            sqle.printStackTrace();
+            // sqle.printStackTrace();
         }
     }
 
@@ -440,52 +604,28 @@ public class Tenant {
         try {
             System.out.println("\nHere at NUMA, all our tenants have complimentary access to their property's amenities.");
 
-            // String aQuery = "select * from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
-            String gymQ = "select amenity_type, treadmills, power_racks, showers from amenities natural join gym where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
-            String poolQ = "select amenity_type, length, depth, num_lanes from amenities natural join pool where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
+            String aQuery = "select amenity_type from amenities where p_id in (select p_id from lives_in natural join apartment where tenant_id = ?)";
+            PreparedStatement pStmt = conn.prepareStatement(aQuery);
+            pStmt.setInt(1, tenant_id);
+            ResultSet rs = pStmt.executeQuery();
 
-            PreparedStatement pStmt1 = conn.prepareStatement(gymQ);
-            PreparedStatement pStmt2 = conn.prepareStatement(poolQ);
-            pStmt1.setInt(1, tenant_id);
-            pStmt2.setInt(1, tenant_id);
-            ResultSet rs1 = pStmt1.executeQuery();
-            ResultSet rs2 = pStmt2.executeQuery();
-
-             // print gym info
-             if(rs1.next() == false) {
+            if(rs.next() == false) {
                 System.out.println("[Apologies]: We are currently working to get more amenities at your property.");
-             } else {
+            } else {
+
                 System.out.println("\nAmenities Offered");
                 System.out.println("================");
-                System.out.println("Type\t\t\tTreadmills/Length\tPower Racks/Depth\tShowers/Lanes");
-                System.out.println("================");
                 do {
-                    System.out.println(rs1.getString(1) + "\t\t\t" + rs1.getString(2) + "\t\t\t" + rs1.getString(3) + "\t\t\t" + rs1.getString(4));
-                } while(rs1.next());
+                    System.out.println(rs.getString(1));
+                } while(rs.next());
                 System.out.println();
-             }
-            
-             // print pool info
-             if(rs2.next() == false) {
-                System.out.println("[Apologies]: We are currently working to get more amenities at your property.");
-             } else {
-                do {
-                    System.out.println(rs2.getString(1) + "\t\t\t" + rs2.getString(2) + "\t\t\t" + rs2.getString(3) + "\t\t\t" + rs2.getString(4));
-                } while(rs1.next());
-                System.out.println();
-
-             }
-            
-            // close statements & rs
-            pStmt1.close();
-            pStmt2.close();
-            rs1.close();
-            rs2.close();
-
+            }
+            pStmt.close();
+            rs.close();
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Error with database. Please try again.\n");
-            sqle.printStackTrace();
+            // sqle.printStackTrace();
         }
     }
 
@@ -520,14 +660,14 @@ public class Tenant {
                 addpStmt.setInt(4, tenant_id);
                 // execute query
                 if(addpStmt.executeUpdate() == 1) {
-                    System.out.println("[Success]: You have successfully added a roommate.");
+                    System.out.println("[Success]: You have successfully added a roommate.\n");
                     updatedRows++;
                 } else {
                     System.out.println("[Error]: Could not add roommate. Please try again.");
                 }
             }
             if(updatedRows == numRoommates) {
-                System.out.println("[Update]: All roommates added successfully.");
+                System.out.println("[Update]: All roommates added successfully.\n");
             } 
             addpStmt.close();
         }
@@ -631,6 +771,33 @@ public class Tenant {
         catch (Exception e) {
             System.out.println("[Error]: Undefined error. Please try again.");
         }
+    }
+
+    // get payment method of tenant
+    public static String getPaymentMethod(Connection conn, int tenant_id) {
+        
+        String paymentMethod = "";
+        try {
+            String paymentQ = "select pay_method from payment where tenant_id = ?";
+            PreparedStatement pStmt = conn.prepareStatement(paymentQ);
+            pStmt.setInt(1, tenant_id);
+            ResultSet rs = pStmt.executeQuery();
+
+            if(rs.next()) {
+                paymentMethod = rs.getString("pay_method");
+                return paymentMethod;
+            } else {
+                return paymentMethod;
+            }
+
+        }
+        catch(SQLException sqle) {
+            System.out.println("[Error]: Error with database. Please try again.");
+        }
+        catch(Exception e) {
+            System.out.println("[Error]: Undefined error. Please try again.");
+        }
+        return paymentMethod;
     }
     
 }

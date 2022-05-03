@@ -26,18 +26,18 @@ public class Connect {
                 System.out.println("Connection successful!\n");
 
                 int choice;
-                do {
-                    // switch case for which interface to access
+                  
+                do {            
                     System.out.println("Select the interface you would like to use: ");
                     System.out.println("\t0. Quit Program");
                     System.out.println("\t1. Property Manager");
                     System.out.println("\t2. Tenant");
-                    System.out.println("\t3. NUMA Manager");   
-                    
+                    System.out.println("\t3. NUMA Manager");
                     // get user's choice for interface
                     choice = Integer.parseInt(in.nextLine());
                     switch (choice) {
                         case 0:
+                            // quit interface
                             System.out.println("Exiting NUMA Enterprises. Goodbye!");
                             break;
 
@@ -64,10 +64,10 @@ public class Connect {
                         
                         default:
                             System.out.println("Please make a proper selection (0-3).");
-                            System.out.println("\t0. Quit Program");
-                            System.out.println("\t1. Property Manager");
-                            System.out.println("\t2. Tenant");
-                            System.out.println("\t3. NUMA Manager"); 
+                            // System.out.println("\t0. Quit Program");
+                            // System.out.println("\t1. Property Manager");
+                            // System.out.println("\t2. Tenant");
+                            // System.out.println("\t3. NUMA Manager\n"); 
                             break;
                     }
 
@@ -78,7 +78,7 @@ public class Connect {
                 
             }
             catch (SQLException sqle) {
-                System.out.println("[Error]: Connect error. Please try again.");
+                System.out.println("[Error]: Connection error. Please try again.");
                  // sqle.printStackTrace();
             }
             catch (InputMismatchException exp) {

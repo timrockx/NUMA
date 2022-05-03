@@ -35,20 +35,21 @@ public class Manager {
 
                         case 1:
                             // execute query to return ALL property listings
-                            String propertyQuery = "select * from property";
+                            String propertyQuery = "select * from property order by p_id";
                             PreparedStatement pStmt = conn.prepareStatement(propertyQuery);
                             ResultSet rs1 = pStmt.executeQuery();
 
                             if(rs1.next() == false) {
                                 System.out.println("[Error]: No properties found in NUMA System.\n");
+
                             } else {
                                 // display results
                                 System.out.println("\nProperties in NUMA Enterprises: ");
                                 System.out.println("================");
-                                System.out.println("Property ID\tStreet\t\t\tCity\t\t\tState\t\tNum. Apts.\t\t");
+                                System.out.println("Property ID\tStreet\t\t\tCity\t\t\tState\t\tZip Code\t\t# Apts.");
 
                                 do {
-                                    System.out.println(rs1.getString(1) + "\t\t" + rs1.getString(2) + "\t\t" + rs1.getString(3) + "\t\t" + rs1.getString(4) + "\t\t" + rs1.getString(5) + "\t\t");
+                                    System.out.println(rs1.getString(1) + "\t\t" + rs1.getString(2) + "\t\t" + rs1.getString(3) + "\t\t" + rs1.getString(4) + "\t\t" + rs1.getString(5) + "\t" + rs1.getString(6) + "\t\t");
                                 } while(rs1.next());
                                 System.out.println();
                             }
@@ -93,9 +94,9 @@ public class Manager {
                             // execute query
                             int rowsChanged = pStmt4.executeUpdate();
                             if(rowsChanged == 1) {
-                                System.out.println("[Update]: Visitor '" + visitorName + "' has been added to the database.\n");
+                                System.out.println("\n[Update]: Visitor '" + visitorName + "' has been added to the database.\n");
                             } else {
-                                System.out.println("[Error]: Visitor was not added to the database.\n");
+                                System.out.println("\n[Error]: Visitor was not added to the database.\n");
                             }
                             break;
 
@@ -193,7 +194,6 @@ public class Manager {
 
                  // insert into tenant table
                 int tenant_id = createTenantID(conn);
-                // System.out.println("TENANT ID: "+ tenant_id);
                 String insertQ = "insert into tenant values (?, ?, ?, ?, ?)";
                 PreparedStatement pStmt6 = conn.prepareStatement(insertQ);
                 pStmt6.setInt(1, tenant_id);

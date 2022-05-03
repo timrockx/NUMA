@@ -18,6 +18,7 @@ public class numaManager {
                     System.out.println("\t0. Quit Interface.");
                     System.out.println("\t1. Add a new property.");
                     System.out.println("\t2. Add new amenities to an exisitng property.");
+                    System.out.println("\t3. Raise rent on an apartment's lease.");
                     choice = Integer.parseInt(in.nextLine());
 
                     switch(choice) {
@@ -35,10 +36,15 @@ public class numaManager {
                             addAmenity(conn);    
                             break;
 
+                        case 3: // increase rent on apartment
+                            raiseRent(conn);
+                            break;
+
                         default:
                             System.out.println("Please select a valid option: ");
                             System.out.println("\t1. Add a new property.");
                             System.out.println("\t2. Add new amenities to a property.");
+                            System.out.println("\t3. Raise rent on an apartment's lease.");
                             break;
                     }
 
@@ -62,12 +68,14 @@ public class numaManager {
     }
 
 
+    // add a new property to the database
     public static void addProperty(Connection conn) {
         Scanner in = new Scanner(System.in);
         try {
             boolean propAdded = false;
             String street, city, state, zip;
             int numApartments, p_id;
+            int addedApartments = 0;
             do {
                 System.out.println("------Add a new property------");
                 // get basic info to add to propety table
@@ -98,31 +106,42 @@ public class numaManager {
                 if(rowsChanged == 1) {
                     System.out.println("[Update]: Property added successfully!");
                     propAdded = true;
+                    break;
             
                 } else {
                     System.out.println("[Error]: Property could not be added.");
                 }
 
             } while (!propAdded);
+
+            System.out.println("outside while loop");
             
             // for each apartment we insert into the apartment table
             for(int i = 1; i < numApartments; i++) {
                 // generate apt_num
+                System.out.println("inside for loop");
+
                 int apt_num = createAptNum(conn, numApartments);
                 if(apt_num == 0) {
                     System.out.println("[Error]: Could not generate apartment number.");
                     break;
                 }
 
+                System.out.println("apt num" + apt_num);
+
                 // number of beds
                 int [] beds = {1, 2, 3};
                 int ind = new Random().nextInt(beds.length);
                 int numBeds = beds[ind];
 
+                System.out.println("num beds" + numBeds);
+
                 // number of baths
                 double [] baths = {1, 1.5, 2, 2.5};
                 ind = new Random().nextInt(baths.length);
                 double numBaths = baths[ind];
+
+                System.out.println("num baths" + numBaths);
 
                 // sq footage
                 int sq_foot = 0;
@@ -143,6 +162,9 @@ public class numaManager {
                     sq_foot = new Random().nextInt(250) + 700;
                 }
 
+
+                System.out.println("before insert");
+
                 String addAptQ = "insert into apartment values (?, ?, ?, ?, ?)";
                 PreparedStatement pStmt = conn.prepareStatement(addAptQ);
                 pStmt.setInt(1, apt_num);
@@ -152,9 +174,17 @@ public class numaManager {
                 pStmt.setInt(5, p_id);
                 int rowsChanged = pStmt.executeUpdate();
 
+                System.out.println("after execute update");
+
                 if(!(rowsChanged == 1)) {
                     System.out.println("[Error]: Apartment could not be added.");
+                } else {
+                    System.out.println("[Update]: Apartment added successfully!");
+                    addedApartments++;
                 }
+            }
+            if(addedApartments == numApartments) {
+                System.out.println("[Update]: All apartments were added successfully!");
             }
             
         }
@@ -217,8 +247,14 @@ public class numaManager {
                 }
 
                 // get option for new amenity addition
-                System.out.println("Valid options include: " + allAmenities);
+                System.out.println("Valid options include: " + allAmenities + ". Enter 0 to cancel this transaction.");
                 String newAmenity = in.nextLine();
+
+                if(newAmenity.equals("0")) {
+                    System.out.println("[Cancelled]: Transaction cancelled.\n");
+                    return;
+                }
+
                 if(allAmenities.contains(newAmenity)) {
                     // add amenity to amenities table
                     String addAmenityQ = "insert into amenities values (?, ?, ?)";
@@ -230,13 +266,13 @@ public class numaManager {
                     int rowsChanged = pStmt2.executeUpdate();
 
                     if(rowsChanged == 1) {
-                        System.out.println("[Update]: Amenity added successfully!");
+                        System.out.println("[Update]: Amenity added successfully!\n");
                     } else {
-                        System.out.println("[Error]: Amenity could not be added.");
+                        System.out.println("[Error]: Amenity could not be added.\n");
                     }
 
                 } else {
-                    System.out.println("[Error]: Invalid amenity. Please try again.");
+                    System.out.println("[Error]: Invalid amenity. Please try again.\n");
                 }
                 
             }
@@ -244,7 +280,7 @@ public class numaManager {
         }
         catch(SQLException sqle) {
             System.out.println("[Error]: Database error. Please try again.");
-            sqle.printStackTrace();
+            // sqle.printStackTrace();
         }
         catch(InputMismatchException e) {
             System.out.println("[Error]: Invalid input. Please try again.");
@@ -257,7 +293,82 @@ public class numaManager {
  
     }
 
-    // generate a new amenity ID when managers want to add one
+    // raise rent on an apartment
+    public static void raiseRent(Connection conn) {
+        Scanner in = new Scanner(System.in);
+        boolean rentRaised = false;
+
+        try { 
+            do {
+                System.out.println("Enter the apartment number of the lease you want to increase rent on: ");
+                int apt_num = Integer.parseInt(in.nextLine());
+
+                // get current rent $
+                String currentRentQ = "select monthly_price from lease where apt_num = ?";
+                PreparedStatement pStmt1 = conn.prepareStatement(currentRentQ);
+                pStmt1.setInt(1, apt_num);
+                ResultSet rs1 = pStmt1.executeQuery();
+                double currentRent = 0.0;
+
+                if(rs1.next() == false) {
+                    System.out.println("[Error]: This apartment is not currently leased.");
+                } else {
+                    currentRent = rs1.getDouble(1);   
+                }
+                System.out.println("Apartment " + apt_num + " is currently rented for $" + currentRent + " per month.\n");
+
+                // get new rent $
+                System.out.println("What would you like the new monthly rate to be? (0 to quit) ");
+                double newRent = Double.parseDouble(in.nextLine());
+
+                // 0 is the exit code
+                if(newRent == 0) {
+                    System.out.println("Quitting... Monthly rate was not changed.\n");
+                    rentRaised = true;
+                    break;
+                }
+
+                // new rent must be greater than current
+                if(newRent <= currentRent) {
+                    System.out.println("[Error]: New monthly rate must be greater than the current rate.\n");
+                } else {
+                    // update rent
+                    String updateRentQ = "update lease set monthly_price = ? where apt_num = ?";
+                    PreparedStatement pStmt2 = conn.prepareStatement(updateRentQ);
+                    pStmt2.setDouble(1, newRent);
+                    pStmt2.setInt(2, apt_num);
+                    int rowsChanged = pStmt2.executeUpdate();
+
+                    if(rowsChanged == 1) {
+                        System.out.println("[Update]: Rent for apartment " + apt_num + " updated successfully!\n");
+                        rentRaised = true;
+                    } else {
+                        System.out.println("[Error]: Rent could not be updated. Please try again.\n");
+                    }
+                }
+
+            } while(!rentRaised);
+
+        }
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Database error. Please try again.");
+            // sqle.printStackTrace();
+        }
+        catch (InputMismatchException e) {
+            System.out.println("[Error]: Invalid input. Please try again.");
+            //e.printStackTrace();
+        }
+        catch (Exception e) {
+            System.out.println("[Error]: Invalid input. Please try again.");
+            //e.printStackTrace();
+        }
+
+
+    }
+
+
+
+    // generate a new amenity ID when adding new amenity
     public static int createAmenityID(Connection conn) {
         int a_id = 0;
         try {
@@ -277,6 +388,7 @@ public class numaManager {
         return a_id;
     }
 
+    // generate new property id when inserting
     public static int createPropertyID(Connection conn) {
         int p_id = 0;
         try {
@@ -296,8 +408,10 @@ public class numaManager {
         return p_id;
     }
 
+    // generate new apartment num when adding a new apartment
     public static int createAptNum(Connection conn, int numApts) {
         int apt_num = 0;
+        System.out.println("inside create apt num fn");
         try {
             String query = "select apt_num from apartment";
             PreparedStatement pStmt = conn.prepareStatement(query);
@@ -307,25 +421,34 @@ public class numaManager {
                 apartmentNums.add(rs.getString(1));
             }
             boolean valid = false;
+
+            System.out.println("before while loop");
+
             while(!valid) {
                 apt_num = new Random().nextInt(numApts) + 1;
                 if(apartmentNums.contains(Integer.toString(apt_num))) {
                     valid = false;
+                    System.out.println("contains");
                 } else {
+                    System.out.println("valid");
                     valid = true;
                     return apt_num;
                 }
             }
+            System.out.println("outsiude while");
 
         }
         catch (SQLException sqle) {
             System.out.println("[Error]: Database error. Please try again.");
             // sqle.printStackTrace();
         }
+        System.out.println("return stmt");
         return apt_num;
+
     }
        
 
+    // check property id is valid when prompted
     public static int validateProperty(Connection conn, int p_id) {
         try {
             String propertyQ = "select p_id from property";
@@ -368,3 +491,4 @@ public class numaManager {
     }
     
 }
+
