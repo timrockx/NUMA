@@ -15,10 +15,10 @@ public class numaManager {
                 do {
                     // menu options
                     System.out.println("Choose one of the options below: ");
-                    System.out.println("\t0. Quit Interface.");
                     System.out.println("\t1. Add a new property.");
                     System.out.println("\t2. Add new amenities to an exisitng property.");
                     System.out.println("\t3. Raise rent on an apartment's lease.");
+                    System.out.println("\t0. Quit Interface.");
                     choice = Integer.parseInt(in.nextLine());
 
                     switch(choice) {
@@ -45,6 +45,7 @@ public class numaManager {
                             System.out.println("\t1. Add a new property.");
                             System.out.println("\t2. Add new amenities to a property.");
                             System.out.println("\t3. Raise rent on an apartment's lease.");
+                            System.out.println("\t0. Quit Interface.");
                             break;
                     }
 

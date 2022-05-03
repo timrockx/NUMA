@@ -51,7 +51,7 @@ public class Tenant {
                                     
                                 } else {
                                     // quit, we need payment method
-                                    System.out.println("[Note]: A payment method is required before making a payment. Please try again.");
+                                    System.out.println("[Note]: A payment method is required before making a payment. Please try again.\n");
                                     break;
                                 }
 
@@ -64,11 +64,13 @@ public class Tenant {
                                     makePayment(conn, t_id, paymentMethod);
                                     
                                 } else if(option.equalsIgnoreCase("n")) {
-                                    System.out.println("[Redirect]: Redirecting to Update Payment.");
+                                    System.out.println("[Redirect]: Redirecting to Update Payment.\n");
                                     // call updatePayment method 
                                     updatePayment(conn, t_id);
                                     // after setting payment method, make payment
+                                    paymentMethod = getPaymentMethod(conn, t_id);
                                     makePayment(conn, t_id, paymentMethod);
+                                    
                                 }
                             }
                             break;
@@ -147,7 +149,7 @@ public class Tenant {
                     accessGranted = true;
                     return t_id;    // return t_id to be used in interface()
                 } else {
-                    System.out.println("[Error]: Invalid Tenant ID. Please try again.");
+                    System.out.println("[Error]: Invalid Tenant ID. Please try again.\n");
                 }
             } while(accessGranted == false);
         }
@@ -194,7 +196,7 @@ public class Tenant {
                     method = Integer.parseInt(in.nextLine());
 
                     if(method == paymentMethodId) {
-                        System.out.println("[Error]: You already have this payment method on file.");
+                        System.out.println("[Error]: You already have this payment method on file.\n");
                     }
 
                } while(method == paymentMethodId);
@@ -215,12 +217,55 @@ public class Tenant {
             
                         if(rowsChanged == 1) {
                             System.out.println("[Success]: Payment method updated to: " + paymentMethod);
-                            updatedPayment = true;
+                            // collect credit card info
+                            boolean validCC = false;
+                            String ccNum = "";
+                            String expDate = "";
+                            String cvv = "";
+                            do {
+                                System.out.println("Enter the Credit Card Number: ");
+                                ccNum = in.nextLine();
+                                if(!ccNum.matches("^[0-9]{16}$")) {
+                                    System.out.println("[Error]: Invalid Credit Card Number. Please try again.");
+                                    continue;
+                                }
+                                System.out.println("Enter the Expiration Date: (MM/YY) ");
+                                expDate = in.nextLine();
+                                if(!expDate.matches("^[0-1]{1}[0-9]{1}/[0-9]{2}$")) {
+                                    System.out.println("[Error]: Invalid Expiration Date. Please try again.");
+                                    continue;
+                                }
+                                System.out.println("Enter the CVV: (XXX)");
+                                cvv = in.nextLine();
+                                if(!cvv.matches("^[0-9]{3}$")) {
+                                    System.out.println("[Error]: Invalid CVV. Please try again.");
+                                    continue;
+                                }
+                                validCC = true;
 
+                            } while(!validCC);
+
+                            String ccQuery = "insert into credit (tenant_id, card_num, exp_date, cvv) values (?, ?, ?, ?)";
+                            PreparedStatement ccStmt = conn.prepareStatement(ccQuery);
+                            ccStmt.setInt(1, tenant_id);
+                            ccStmt.setString(2, ccNum);
+                            ccStmt.setString(3, expDate);
+                            ccStmt.setString(4, cvv);
+                            rowsChanged = ccStmt.executeUpdate();
+
+                            if(rowsChanged == 1) {
+                                System.out.println("[Success]: Credit Card Info Updated.");
+                                updatedPayment = true;
+                                break;
+                            } else {
+                                System.out.println("[Error]: Credit Card Info Not Updated.");
+                            }
+                 
                         } else {
                             System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
                         }
                         pStmt.close();
+                        
                         break;
 
                     case 2: // venmo
@@ -233,7 +278,33 @@ public class Tenant {
             
                         if(rowsChanged == 1) {
                             System.out.println("[Success]: Payment method updated to: " + paymentMethod);
-                            updatedPayment = true;
+                            // validate venmo username
+                            boolean venmoSet = false;
+                            String vUser = "";
+                            do {
+                                System.out.println("Enter your venmo username: (Limit 10 Digits)");
+                                vUser = in.nextLine();
+                                if(vUser.length() > 10) {
+                                    System.out.println("[Error]: Invalid venmo username. Please try again.");
+                                    continue;
+                                } else {
+                                    venmoSet = true;
+                                }
+                            } while(!venmoSet);
+
+                            String venmoQ = "insert into venmo values (?, ?)";
+                            PreparedStatement vStmt = conn.prepareStatement(venmoQ);
+                            vStmt.setInt(1, tenant_id);
+                            vStmt.setString(2, vUser);
+                            rowsChanged = vStmt.executeUpdate();
+
+                            if(rowsChanged == 1) {
+                                System.out.println("[Success]: Venmo Info Updated.");
+                                updatedPayment = true;
+                                break;
+                            } else {
+                                System.out.println("[Error]: Venmo Info Not Updated.");
+                            }
 
                         } else {
                             System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
@@ -251,10 +322,36 @@ public class Tenant {
             
                         if(rowsChanged == 1) {
                             System.out.println("[Success]: Payment method updated to: " + paymentMethod);
-                            updatedPayment = true;
+                            // validate routing info
+                            boolean validRouting = false;
+                            String routingNum = "";
+                            do {
+                                System.out.println("Enter your routing number: ");
+                                routingNum = in.nextLine();
+                                if((routingNum.length() > 20) || (routingNum.length() < 10)) {
+                                    System.out.println("[Error]: Invalid routing number. Please try again.");
+                                    continue;
+                                } else {
+                                    validRouting = true;
+                                }
+                            } while(!validRouting);
+
+                            String achQuery = "insert into ach (tenant_id, routing_num) values (?, ?)";
+                            PreparedStatement achStmt = conn.prepareStatement(achQuery);
+                            achStmt.setInt(1, tenant_id);
+                            achStmt.setString(2, routingNum);
+                            rowsChanged = achStmt.executeUpdate();
+
+                            if(rowsChanged == 1) {
+                                System.out.println("[Success]: ACH Info Updated.");
+                                updatedPayment = true;
+                                break;
+                            } else {
+                                System.out.println("[Error]: ACH Info Not Updated.");
+                            }
 
                         } else {
-                            System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
+                            System.out.println("[Error]: Payment method could not be updated. Please try again.");
                         }
                         pStmt2.close();
                         break;
@@ -317,7 +414,7 @@ public class Tenant {
                         } else {
                             System.out.println("[Error]: Payment could not be updated. Please try again..");
                         }
-
+                        
                         pStatement.close();
 
                         // collect credit card info
@@ -326,7 +423,6 @@ public class Tenant {
                         String expDate = "";
                         String cvv = "";
                         do {
-
                             System.out.println("Enter the Credit Card Number: ");
                             ccNum = in.nextLine();
                             if(!ccNum.matches("^[0-9]{16}$")) {
@@ -367,7 +463,6 @@ public class Tenant {
                             System.out.println("[Error]: Payment failed to add. Please login to our portal and try again.");
                         }
                         pStmt.close();
-
                         break;
                     
                     // add venmo
@@ -380,24 +475,32 @@ public class Tenant {
                         rowsChanged = pStatement.executeUpdate();
                         if(rowsChanged == 1) {
                             System.out.println("[Update]: Payment method was set to VENMO. Please enter your Venmo Info Below." );
-                            
                         } else {
                             System.out.println("[Error]: Payment could not be updated. Please try again..");
                         }
 
                         pStatement.close();
 
-                        // get venmo info from user
-                        System.out.println("What is your venmo username? ");
-                        String vUser = in.nextLine();
-        
+                        // validate venmo username
+                        boolean venmoSet = false;
+                        String vUser = "";
+                        do {
+                            System.out.println("Enter your venmo username: (Limit 10 Digits)");
+                            vUser = in.nextLine();
+                            if(vUser.length() > 10) {
+                                System.out.println("[Error]: Invalid venmo username. Please try again.");
+                                continue;
+                            } else {
+                                venmoSet = true;
+                            }
+                        } while(!venmoSet);
+
+                        // add venmo info to db
                         String vQuery = "insert into venmo (tenant_id, username) values (?, ?)";
                         PreparedStatement pStmt1 = conn.prepareStatement(vQuery);
-                        // set arguments for venmo account
                         pStmt1.setInt(1, tenant_id);
                         pStmt1.setString(2, vUser);
         
-                        // check output for success
                         rowsChanged = pStmt1.executeUpdate();
                         if (rowsChanged == 1) {
                             System.out.println("[Update]: Payment added successfully!");
@@ -419,7 +522,6 @@ public class Tenant {
                         rowsChanged = pStatement.executeUpdate();
                         if(rowsChanged == 1) {
                             System.out.println("[Update]: Payment method was set to ACH. Please enter your ACH Info Below." );
-                            
                         } else {
                             System.out.println("[Error]: Payment could not be updated. Please try again..");
                         }
@@ -438,11 +540,23 @@ public class Tenant {
                         pStmt2.close();
                         rs.close();
 
-                        // get ach info from user
                         System.out.println("Your account number on file is: " + accNum);
-                        System.out.println("Enter your routing number: ");
-                        String routingNum = in.nextLine();
 
+                         // validate routing info
+                        boolean validRouting = false;
+                        String routingNum = "";
+                        do {
+                            System.out.println("Enter your routing number: ");
+                            routingNum = in.nextLine();
+                            if((routingNum.length() > 20) || (routingNum.length() < 10)) {
+                                System.out.println("[Error]: Invalid routing number. Please try again.");
+                                continue;
+                            } else {
+                                validRouting = true;
+                            }
+                        } while(!validRouting);
+
+                        // add routing info to db
                         String achQuery = "insert into ach (tenant_id, routing_num) values (?, ?)";
                         PreparedStatement pStmt3 = conn.prepareStatement(achQuery);
                         // set arguments for ach account
@@ -470,7 +584,6 @@ public class Tenant {
                         System.out.println("\t3: Cash (C)");
                         break;
                 } 
-
             }
             catch (SQLException sqle) {
                 System.out.println("[Error]: Connect error. Please try again.");
@@ -622,7 +735,6 @@ public class Tenant {
             if(rs.next() == false) {
                 System.out.println("[Error]: No payment history found. Please try again.\n");
             } else {
-                // print header
                 System.out.println("Payment History");
                 System.out.println("================");
                 System.out.println("Date Paid\t\t\tAmount\t\tMethod");
@@ -686,15 +798,41 @@ public class Tenant {
             int updatedRows = 0;
             PreparedStatement addpStmt = null;
 
+            String name = "";
+            String phone =  "";
+            String email = "";
+
+
             for(int i=0; i < numRoommates; i++) {
                 // gather roommate info to add to db
-                System.out.println("Enter the first & last name of your new roommate:");
-                String name = in.nextLine();
-                System.out.println("Enter the phone number of your new roommate: (xxx-xxx-xxxx)");
-                String phone = in.nextLine();
-                System.out.println("Enter the email of your new roommate: ");
-                String email = in.nextLine();
+                boolean validInfo = false;
+                do {
+                    // get name
+                    System.out.println("Enter the first & last name of your new roommate:");
+                    name = in.nextLine();
+                    if(name.length() > 40) {
+                        System.out.println("[Error]: Name must be less than 40 characters. Please try again.");
+                        continue;
+                    } 
+                    // get phone
+                    System.out.println("Enter the phone number of your new roommate: (xxx-xxx-xxxx)");
+                    phone = in.nextLine();
+                    if(phone.matches("\\d{3}-\\d{3}-\\d{4}")) {
+                        System.out.println("[Error]: Phone number must be in the format xxx-xxx-xxxx. Please try again.");
+                        continue;
+                    }
+                    // get email
+                    System.out.println("Enter the email of your new roommate: ");
+                    email = in.nextLine();
+                    if(email.length() > 40 || !email.contains("@")) {
+                        System.out.println("[Error]: Email must be less than 40 characters and must contain an @ symbol. Please try again.");
+                        continue;
+                    }
 
+                    validInfo = true;
+
+                } while(!validInfo);
+                
                 // add roommate to db (using tenant id collected at start)
                 String addRoommateQ = "insert into roommate values(?, ?, ?, ?)";
                 addpStmt = conn.prepareStatement(addRoommateQ);
@@ -720,6 +858,9 @@ public class Tenant {
             System.out.println("[Error]: Error with database. Please try again.\n");
             // sqle.printStackTrace();
         }
+        catch (Exception e) {
+            System.out.println("[Error]: Unkown exception. Please try again.\n");
+        }
     }
 
 
@@ -727,95 +868,140 @@ public class Tenant {
     public static void updatePersonalInfo(Connection conn, int tenant_id) {
         Scanner in = new Scanner(System.in);
         int choice;
-        try {
-            System.out.println("What information would you like to update?");
-            System.out.println("\t0. Quit");
-            System.out.println("\t1. Phone Number");
-            System.out.println("\t2. Social Security Number (SSN)");
-            System.out.println("\t3. Bank Routing");
-            choice = Integer.parseInt(in.nextLine());
+        boolean updatedInfo = false;
+        do {
+            try {
+                System.out.println("What information would you like to update?");
+                System.out.println("\t0. Quit");
+                System.out.println("\t1. Phone Number");
+                System.out.println("\t2. Social Security Number (SSN)");
+                System.out.println("\t3. Bank Routing");
+                choice = Integer.parseInt(in.nextLine());
+    
+                switch(choice) {
+                    case 0: // quit interface
+                        System.out.println("[Exit]: Returing to Main Interface...");
+                        updatedInfo = true;
+                        break;
+    
+                    case 1: // phone number
+                        boolean validPhone = false;
+                        String phone = "";
+                        do {
+                            System.out.println("Enter your new phone number: (xxx-xxx-xxxx)");
+                            phone = in.nextLine();
+    
+                            // check if phone number is valid
+                            if(phone.matches("\\d{3}-\\d{3}-\\d{4}")) {
+                                validPhone = true;
+    
+                            } else {
+                                System.out.println("[Error]: Please enter a valid phone number.\n");
+                            }
+                        } while(!validPhone);
+    
+                        // update phone number in db
+                        String phoneUpdate = "update tenant set phone = ? where tenant_id = ?";
+                        PreparedStatement pStmt = conn.prepareStatement(phoneUpdate);
+                        pStmt.setString(1, phone);
+                        pStmt.setInt(2, tenant_id);
+                        int rowsChanged = pStmt.executeUpdate();
+    
+                        if(rowsChanged == 1) {
+                            System.out.println("[Update]: Phone number was updated in the database.\n");
+                            updatedInfo = true;
+                        } else {
+                            System.out.println("[Error]: Phone number could not be updated. Please try again.");
+                        }
+    
+                        pStmt.close();
+                        break;
+    
+                    case 2: // ssn
+                        boolean validSSN = false;
+                        String ssn = "";
+                        do {
+                            System.out.println("Enter your new social security number: (xxx-xx-xxxx)");
+                            ssn = in.nextLine();
+    
+                            // check if ssn is valid
+                            if(ssn.matches("\\d{3}-\\d{2}-\\d{4}")) {
+                                validSSN = true;
+    
+                            } else {
+                                System.out.println("[Error]: Please enter a valid social security number.\n");
+                            }
+                        } while(!validSSN);
+    
+                        String emailUpdate = "update tenant set ssn = ? where tenant_id = ?";
+                        PreparedStatement pStmt1 = conn.prepareStatement(emailUpdate);
+                        pStmt1.setString(1, ssn);
+                        pStmt1.setInt(2, tenant_id);
+                        rowsChanged = pStmt1.executeUpdate();
+    
+                        if(rowsChanged == 1) {
+                            System.out.println("[Update]: Your SSN was updated in the system.\n");
+                            updatedInfo = true;
 
-            switch(choice) {
-                case 0: // quit interface
-                    System.out.println("Returing to Main Interface...");
-                    break;
+                        } else {
+                            System.out.println("[Error]: SSN could not be updated. Please try again.\n");
+                        }
+    
+                        pStmt1.close();
+                        break;
+    
+                    case 3: // bank routing
+                        boolean validRouting = false;
+                        String routing = "";
+                        do {
+                            System.out.println("Enter your new bank routing number: (xxxx-xxxx-xxxx)");
+                            routing = in.nextLine();
+    
+                            // check if routing is valid
+                            if(routing.matches("\\d{4}-\\d{4}-\\d{4}")) {
+                                validRouting = true;
+    
+                            } else {
+                                System.out.println("[Error]: Please enter a valid bank routing number.\n");
+                            }
+                        } while(!validRouting);
+    
+                        String routingUpdate = "update tenant set routing = ? where tenant_id = ?";
+                        PreparedStatement pStmt2 = conn.prepareStatement(routingUpdate);
+                        pStmt2.setString(1, routing);
+                        pStmt2.setInt(2, tenant_id);
+                        rowsChanged = pStmt2.executeUpdate();
+    
+                        if(rowsChanged == 1) {
+                            System.out.println("[Update]: Your Bank Routing Number was updated in the system.\n");
+                            updatedInfo = true;
 
-                case 1: // phone number
-                    System.out.println("Enter the new phone number you would like on record: (xxx-xxx-xxxx) ");
-                    String pNumber = in.nextLine();
-
-                    String phoneUpdate = "update tenant set phone = ? where tenant_id = ?";
-                    PreparedStatement pStmt = conn.prepareStatement(phoneUpdate);
-                    pStmt.setString(1, pNumber);
-                    pStmt.setInt(2, tenant_id);
-                    int rowsChanged = pStmt.executeUpdate();
-
-                    if(rowsChanged == 1) {
-                        System.out.println("[Update]: Phone number was updated in the database.");
-                    } else {
-                        System.out.println("[Error]: Phone number could not be updated. Please try again.");
-                    }
-
-                    pStmt.close();
-                    break;
-
-                case 2: // ssn
-                    System.out.println("Enter the SSN you would like on record: (xxx-xx-xxxx)");
-                    String ssn = in.nextLine();
-
-                    String emailUpdate = "update tenant set ssn = ? where tenant_id = ?";
-                    PreparedStatement pStmt1 = conn.prepareStatement(emailUpdate);
-                    pStmt1.setString(1, ssn);
-                    pStmt1.setInt(2, tenant_id);
-                    rowsChanged = pStmt1.executeUpdate();
-
-                    if(rowsChanged == 1) {
-                        System.out.println("[Update]: Your SSN was updated in the system.");
-                    } else {
-                        System.out.println("[Error]: SSN could not be updated. Please try again.\n");
-                    }
-
-                    pStmt1.close();
-                    break;
-
-                case 3: // bank routing
-                    System.out.println("Enter your new Bank Routing Number: (at least 5 digits)");
-                    String routing = in.nextLine();
-
-                    String routingUpdate = "update tenant set routing = ? where tenant_id = ?";
-                    PreparedStatement pStmt2 = conn.prepareStatement(routingUpdate);
-                    pStmt2.setString(1, routing);
-                    pStmt2.setInt(2, tenant_id);
-                    rowsChanged = pStmt2.executeUpdate();
-
-                    if(rowsChanged == 1) {
-                        System.out.println("[Update]: Your Bank Routing Number was updated in the system.");
-                    } else {
-                        System.out.println("[Error]: Routing Number could not be updated. Please try again.\n");
-                    }
-
-                    pStmt2.close();
-                    break;
-
-                default:
-                    System.out.println("Please make a valid selection: ");  
-                    System.out.println("\t0. Quit");
-                    System.out.println("\t1. Phone Number");
-                    System.out.println("\t2. Email Address");
-                    System.out.println("\t3. Bank Routing");
-                    break;
+                        } else {
+                            System.out.println("[Error]: Routing Number could not be updated. Please try again.\n");
+                        }
+    
+                        pStmt2.close();
+                        break;
+    
+                    default:
+                        System.out.println("Please make a valid selection: ");  
+                        System.out.println("\t0. Quit");
+                        System.out.println("\t1. Phone Number");
+                        System.out.println("\t2. Email Address");
+                        System.out.println("\t3. Bank Routing");
+                        break;
+                }
             }
-
-        }
-        catch (SQLException sqle) {
-            System.out.println("[Error]: Error with database. Please try again.");
-        }
-        catch (InputMismatchException e) {
-            System.out.println("[Error]: Input Mismatch Error. Please try again.");
-        }
-        catch (Exception e) {
-            System.out.println("[Error]: Undefined error. Please try again.");
-        }
+            catch (SQLException sqle) {
+                System.out.println("[Error]: Error with database. Please try again.\n");
+            }
+            catch (NumberFormatException e) {
+                System.out.println("[Error]: Number format error. Please try again.\n");
+            }
+            catch (Exception e) {
+                System.out.println("[Error]: Undefined error. Please try again.\n");
+            }
+        } while(!updatedInfo);
     }
 
     // get payment method of tenant
