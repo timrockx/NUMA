@@ -79,12 +79,42 @@ public class Manager {
 
                         case 3:
                             // record a visit by a prospective tenant
-                            System.out.println("Enter the visitor's name: ");
-                            String visitorName = in.nextLine();
-                            System.out.println("Enter the visitor's phone number: (xxx-xxx-xxxx) ");
-                            String visitorPhone = in.nextLine();
-                            System.out.println("Enter the visitor's email: ");
-                            String visitorEmail = in.nextLine();
+                            boolean validName = false;
+                            String visitorName = "";
+                            do {
+                                System.out.println("Enter the visitor's name: ");
+                                visitorName = in.nextLine();
+                                if(visitorName.length() > 40) {
+                                    System.out.println("[Error]: Name must be less than 40 characters.\n");
+                                } else {
+                                    validName = true;
+                                }
+                            } while(!validName);
+                            
+                            boolean validPhone = false;
+                            String visitorPhone = "";
+                            do {
+                                System.out.println("Enter the visitor's phone number: (xxx-xxx-xxxx) ");
+                                visitorPhone = in.nextLine();
+                                if(!visitorPhone.matches("\\d{3}-\\d{3}-\\d{4}")) {
+                                    System.out.println("[Error]: Phone number must be in the format xxx-xxx-xxxx.\n");
+                                } else {
+                                    validPhone = true;
+                                }
+                            } while(!validPhone);
+                            
+                            boolean validEmail = false;
+                            String visitorEmail = "";
+                            do {
+                                System.out.println("Enter the visitor's email: ");
+                                visitorEmail = in.nextLine();
+                                if(visitorEmail.length() > 40 || !visitorEmail.contains("@")) {
+                                    System.out.println("[Error]: Email must be less than 40 characters and must contain an @ symbol.\n");
+                                } else {
+                                    validEmail = true;
+                                }
+                            } while(!validEmail);
+                            
                             // insert query
                             String visitorQ = "insert into visitor values (?, ?, ?)";
                             PreparedStatement pStmt4 = conn.prepareStatement(visitorQ);
