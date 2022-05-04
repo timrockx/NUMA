@@ -81,8 +81,8 @@ public class Connect {
                 System.out.println("[Error]: Connection error. Please try again.");
                  // sqle.printStackTrace();
             }
-            catch (InputMismatchException exp) {
-                System.out.println("[Error]: Input Mismatch Error. Please try again.");
+            catch (NumberFormatException exp) {
+                System.out.println("[Error]: Number Format Exception. Please try again and enter an integer.");
             }
             catch (Exception e) {
                 System.out.println("[Error]: Unknown error. Please try again.");
