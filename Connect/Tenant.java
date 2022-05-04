@@ -14,6 +14,11 @@ public class Tenant {
                  System.out.println("Welcome to the NUMA Tenant Interface!\n");
                  // tenant login
                  int t_id = tenantLogin(conn);
+                 if(t_id == -1) {
+                        System.out.println("\nExiting NUMA Tenant Interface.\n");
+                        break;
+                 }
+
                  int choice;
                  do {
                      // interface menu
@@ -68,8 +73,8 @@ public class Tenant {
                                     // call updatePayment method 
                                     updatePayment(conn, t_id);
                                     // after setting payment method, make payment
-                                    paymentMethod = getPaymentMethod(conn, t_id);
-                                    makePayment(conn, t_id, paymentMethod);
+                                    // paymentMethod = getPaymentMethod(conn, t_id);
+                                    // makePayment(conn, t_id, paymentMethod);
                                     
                                 }
                             }
@@ -136,11 +141,18 @@ public class Tenant {
                     idList.add(ids.getString(i++));
                 }
             }
+            loginP.close();
+            ids.close();
             boolean accessGranted = false;
             do {
                 // get user input for tenant_id
-                System.out.println("Enter your tenant ID: ");
+                System.out.println("Enter your tenant ID: (-1 to Quit / See Login Instructions on README.)");
                 t_id = Integer.parseInt(in.nextLine());
+
+                if(t_id == -1) {
+                    // exit
+                    return -1;
+                }
 
                 // check against list, if matches allow access
                 if(idList.contains(Integer.toString(t_id))) {
@@ -214,6 +226,7 @@ public class Tenant {
                         pStmt.setString(1, paymentMethod);
                         pStmt.setInt(2, tenant_id);
                         int rowsChanged = pStmt.executeUpdate();
+                        pStmt.close();
             
                         if(rowsChanged == 1) {
                             System.out.println("[Success]: Payment method updated to: " + paymentMethod);
@@ -252,6 +265,7 @@ public class Tenant {
                             ccStmt.setString(3, expDate);
                             ccStmt.setString(4, cvv);
                             rowsChanged = ccStmt.executeUpdate();
+                            ccStmt.close();
 
                             if(rowsChanged == 1) {
                                 System.out.println("[Success]: Credit Card Info Updated.");
@@ -265,7 +279,6 @@ public class Tenant {
                             System.out.println("[Error]: Payment method couldl not be updated. Please try again.");
                         }
                         pStmt.close();
-                        
                         break;
 
                     case 2: // venmo
@@ -275,6 +288,7 @@ public class Tenant {
                         pStmt1.setString(1, paymentMethod);
                         pStmt1.setInt(2, tenant_id);
                         rowsChanged = pStmt1.executeUpdate();
+                        pStmt1.close();
             
                         if(rowsChanged == 1) {
                             System.out.println("[Success]: Payment method updated to: " + paymentMethod);
@@ -285,7 +299,7 @@ public class Tenant {
                                 System.out.println("Enter your venmo username: (Limit 10 Digits)");
                                 vUser = in.nextLine();
                                 if(vUser.length() > 10) {
-                                    System.out.println("[Error]: Invalid venmo username. Please try again.");
+                                    System.out.println("[Error]: Invalid venmo username. Please try again.\n");
                                     continue;
                                 } else {
                                     venmoSet = true;
@@ -297,6 +311,7 @@ public class Tenant {
                             vStmt.setInt(1, tenant_id);
                             vStmt.setString(2, vUser);
                             rowsChanged = vStmt.executeUpdate();
+                            vStmt.close();
 
                             if(rowsChanged == 1) {
                                 System.out.println("[Success]: Venmo Info Updated.");
@@ -319,6 +334,7 @@ public class Tenant {
                         pStmt2.setString(1, paymentMethod);
                         pStmt2.setInt(2, tenant_id);
                         rowsChanged = pStmt2.executeUpdate();
+                        pStmt2.close();
             
                         if(rowsChanged == 1) {
                             System.out.println("[Success]: Payment method updated to: " + paymentMethod);
@@ -341,6 +357,7 @@ public class Tenant {
                             achStmt.setInt(1, tenant_id);
                             achStmt.setString(2, routingNum);
                             rowsChanged = achStmt.executeUpdate();
+                            achStmt.close();
 
                             if(rowsChanged == 1) {
                                 System.out.println("[Success]: ACH Info Updated.");
@@ -572,7 +589,6 @@ public class Tenant {
                             System.out.println("[Error]: Payment failed to add. Please go through our portal again and try again.");
                         }
                         pStmt3.close();
-
                         break;
 
                     // invalid input
@@ -605,12 +621,18 @@ public class Tenant {
 
         // iterate while payment has not been made
         do {
+            PreparedStatement pStatement = null;
+            PreparedStatement lastPayStmt = null;
+            PreparedStatement pStmt = null;
+            ResultSet rs1 = null;
+            ResultSet lastPayRS = null;
+
             try {
                  // get tenant's monthly rate
                  String rateQuery = "select monthly_price from lease natural join lives_in where tenant_id = ?";
-                 PreparedStatement pStatement = conn.prepareStatement(rateQuery);
+                 pStatement = conn.prepareStatement(rateQuery);
                  pStatement.setInt(1, tenant_id);
-                 ResultSet rs1 = pStatement.executeQuery();
+                 rs1 = pStatement.executeQuery();
                  int monthly_price = 0;
  
                  if(rs1.next() == false) {
@@ -619,15 +641,12 @@ public class Tenant {
                  } else {
                      monthly_price = Integer.parseInt(rs1.getString(1));
                  }
-                 // close pstatement and resultset
-                 pStatement.close();
-                 rs1.close();
 
                 // get tenant's last payment info
                 String lastPayQ = "select date_paid, amount from payment_history where tenant_id = ? order by date_paid desc fetch first row only";
-                PreparedStatement lastPayStmt = conn.prepareStatement(lastPayQ);
+                lastPayStmt = conn.prepareStatement(lastPayQ);
                 lastPayStmt.setInt(1, tenant_id);
-                ResultSet lastPayRS = lastPayStmt.executeQuery();
+                lastPayRS = lastPayStmt.executeQuery();
                 int last_paid = 0;
                 java.sql.Date datePaid = null;
                 LocalDate nextPaymentDate = null;
@@ -642,7 +661,7 @@ public class Tenant {
                     if(payNow.equalsIgnoreCase("y")) {
                         // add to payment history
                         String payQuery = "insert into payment_history (tenant_id, date_paid, amount, method) values (?, SYSDATE, ?, ?)";
-                        PreparedStatement pStmt = conn.prepareStatement(payQuery);
+                        pStmt = conn.prepareStatement(payQuery);
                         // set arguments of query
                         pStmt.setInt(1, tenant_id);
                         pStmt.setInt(2, monthly_price);
@@ -657,7 +676,6 @@ public class Tenant {
                             System.out.println("[Error]: Issue with  payment method. Please login and try again.");
                             paymentMade = true; 
                         }
-                        pStmt.close();
 
                     } else if(payNow.equalsIgnoreCase("n")) {
                         // print warning message, but do nothing
@@ -683,12 +701,12 @@ public class Tenant {
                         paymentMade = true;
                     } else if((last_paid < monthly_price) && (nextPaymentDate.isAfter(currDate))) {
                         amountDue = monthly_price - last_paid;
-                        System.out.println("[Not: You have a balance of $" + amountDue + " due. Would you like to pay now? (y/n) ");
+                        System.out.println("[Note: You have a balance of $" + amountDue + " due. Would you like to pay now? (y/n) ");
                         String payNow = in.nextLine();
                         if(payNow.equalsIgnoreCase("y")) {
                             // add to payment history
                             String payQuery = "insert into payment_history (tenant_id, date_paid, amount, method) values (?, SYSDATE, ?, ?)";
-                            PreparedStatement pStmt = conn.prepareStatement(payQuery);
+                            pStmt = conn.prepareStatement(payQuery);
                             // set arguments of query
                             pStmt.setInt(1, tenant_id);
                             pStmt.setInt(2, amountDue);
@@ -702,7 +720,6 @@ public class Tenant {
                                 System.out.println("[Error]: Issue with  payment method. Please login and try again.");
                                 paymentMade = true; 
                             }
-                            pStmt.close();
 
                         } else if(payNow.equalsIgnoreCase("n")) {
                             // print warning message, but do nothing
@@ -719,6 +736,29 @@ public class Tenant {
             catch(SQLException sqle) {
                 System.out.println("[Error]: Error with Database. Please try again.");
                 sqle.printStackTrace();
+            }
+            finally {
+                try {
+                    if(pStatement != null) {
+                        pStatement.close();
+                    }
+                    if(rs1 != null) {
+                        rs1.close();
+                    }
+                    if(lastPayStmt != null) {
+                        lastPayStmt.close();
+                    }
+                    if(lastPayRS != null) {
+                        lastPayRS.close();
+                    }
+                    if(pStmt != null) {
+                        pStmt.close();
+                    }
+                }
+                catch(SQLException sqle) {
+                    System.out.println("[Error]: Error with Database. Please try again.");
+                    sqle.printStackTrace();
+                }
             }
         } while(paymentMade == false);
     }
@@ -791,7 +831,6 @@ public class Tenant {
     public static void addRoommates(Connection conn, int tenant_id) {
         // instantiate scanner
         Scanner in = new Scanner(System.in);
-
         try {
             System.out.println("How many roommates would you like to add?");
             int numRoommates = Integer.parseInt(in.nextLine());
@@ -801,8 +840,6 @@ public class Tenant {
             String name = "";
             String phone =  "";
             String email = "";
-
-
             for(int i=0; i < numRoommates; i++) {
                 // gather roommate info to add to db
                 boolean validInfo = false;
@@ -828,7 +865,6 @@ public class Tenant {
                         System.out.println("[Error]: Email must be less than 40 characters and must contain an @ symbol. Please try again.");
                         continue;
                     }
-
                     validInfo = true;
 
                 } while(!validInfo);
@@ -1017,18 +1053,20 @@ public class Tenant {
             if(rs.next()) {
                 paymentMethod = rs.getString("pay_method");
                 return paymentMethod;
-            } else {
-                return paymentMethod;
             }
+            pStmt.close();
+            rs.close();
 
         }
         catch(SQLException sqle) {
-            System.out.println("[Error]: Error with database. Please try again.");
+            System.out.println("[Error]: Error with database. Please try again.\n");
+            sqle.printStackTrace();
         }
         catch(Exception e) {
-            System.out.println("[Error]: Undefined error. Please try again.");
+            System.out.println("[Error]: Undefined error. Please try again.\n");
         }
         return paymentMethod;
     }
     
+
 }
