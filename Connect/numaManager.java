@@ -234,7 +234,7 @@ public class numaManager {
             int p_id = validateProperty(conn, Integer.parseInt(in.nextLine()));
             if(p_id == -1) {
                 // invalid property id
-                System.out.println("[Error]: Invalid property ID. Please try again.");
+                System.out.println("[Error]: Invalid property ID. Please try again.\n");
     
             } else {
                 // get current amenities of property selected
@@ -246,7 +246,7 @@ public class numaManager {
                 ArrayList<String> offeredAmenities = new ArrayList<>(); 
                 // display results & store in array
                 if(rs1.next() == false) {
-                    System.out.println("[Error]: This property currently offers no amenities.");
+                    System.out.println("[Error]: This property currently offers no amenities.\n");
     
                 } else {
                     System.out.println("Property " + p_id + " currently offers the following amenities: ");
