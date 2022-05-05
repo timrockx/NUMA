@@ -78,14 +78,14 @@ public class Connect {
                 
             }
             catch (SQLException sqle) {
-                System.out.println("[Error]: Connection error. Please try again.");
+                System.out.println("[Error]: Connection error. Please try again.\n");
                  // sqle.printStackTrace();
             }
             catch (NumberFormatException exp) {
-                System.out.println("[Error]: Number Format Exception. Please try again and enter an integer.");
+                System.out.println("[Error]: Number Format Exception. Please try again and enter an integer.\n");
             }
             catch (Exception e) {
-                System.out.println("[Error]: Unknown error. Please try again.");
+                System.out.println("[Error]: Unknown error. Please try again.\n");
             }
 
         } while(conn == null);
