@@ -82,17 +82,66 @@ public class numaManager {
                 System.out.println("------Add a new property------");
                 // get basic info to add to propety table
                 System.out.println("Please enter the following information: ");
-                System.out.println("Street: ");
-                street = in.nextLine();
-                System.out.println("City: ");
-                city = in.nextLine();
-                System.out.println("State: ");
-                state = in.nextLine();
-                System.out.println("Zip Code: ");
-                zip = in.nextLine();
-                System.out.println("How many apartments do you want in this property? (1-20) Since this is a new development property.");
-                numApartments = Integer.parseInt(in.nextLine());
 
+                boolean validSt = false;
+                do {
+                    System.out.println("Street: ");
+                    street = in.nextLine();
+                    if(street.length() > 50) {
+                        System.out.println("[Error]: Street name is too long. Please try again.");
+                    }
+                    else {
+                        validSt = true;
+                    }
+                } while(!validSt);
+                
+                boolean validCity = false;
+                do {
+                    System.out.println("City: ");
+                    city = in.nextLine();
+                    if(city.length() > 30) {
+                        System.out.println("[Error]: City name is too long. Please try again.");
+                    }
+                    else {
+                        validCity = true;
+                    }
+                } while(!validCity);
+                
+                boolean validState = false;
+                do {
+                    System.out.println("State: ");
+                    state = in.nextLine();
+                    if(!(state.length() == 2)) {
+                        System.out.println("[Error]: State name is too long. Please try again.");
+                    }
+                    else {
+                        validState = true;
+                    }
+                } while(!validState);
+                
+                boolean validZip = false;
+                do {
+                    System.out.println("Zip Code: ");
+                    zip = in.nextLine();
+                    if(!(zip.length() == 5)) {
+                        System.out.println("[Error]: Zip code is too long. Please try again.");
+                    }
+                    else {
+                        validZip = true;
+                    }
+                } while(!validZip);
+                
+                boolean validNum = false;
+                do {
+                    System.out.println("How many apartments do you want in this property? (Limit 50) Since this is a new development property.");
+                    numApartments = Integer.parseInt(in.nextLine());
+                    if(numApartments > 50) {
+                        System.out.println("[Error]: Number of apartments cannot exceed 50.");
+                    } else {
+                        validNum = true;
+                    }
+                } while(!validNum);
+                
                 p_id = createPropertyID(conn);
 
                 // insert statement
