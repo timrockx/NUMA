@@ -213,14 +213,54 @@ public class Manager {
 
             if(aptNums.contains(Integer.toString(apt_num))) {
                 // apartment is open for rent
-                System.out.println("Enter the Tenant's Name: ");
-                String name = in.nextLine();
-                System.out.println("Enter the Tenant's SSN: (xxx-xx-xxxx)");
-                String ssn = in.nextLine();
-                System.out.println("Enter the Tenant's Phone Number: (xxx-xxx-xxxx)");
-                String phone = in.nextLine();
-                System.out.println("Enter the Tenant's Bank Routing: ");
-                String bank = in.nextLine();
+                boolean validName = false;
+                String name = "";
+                do {
+                    System.out.println("Enter the tenant's name: ");
+                    name = in.nextLine();
+                    if(name.length() > 40) {
+                        System.out.println("[Error]: Name must be less than 40 characters.\n");
+                    } else {
+                        validName = true;
+                    }
+                } while(!validName);
+
+                boolean validSSN = false;
+                String ssn = "";
+                do {
+                    System.out.println("Enter the tenant's SSN: (xxx-xx-xxxx) ");
+                    ssn = in.nextLine();
+                    if(!ssn.matches("\\d{3}-\\d{2}-\\d{4}")) {
+                        System.out.println("[Error]: SSN must be in the format (xxx-xx-xxxx).\n");
+                    } else {
+                        validSSN = true;
+                    }
+                } while(!validSSN);
+
+
+                boolean validPhone = false;
+                String phone = "";
+                do {
+                    System.out.println("Enter the tenant's phone number: (xxx-xxx-xxxx) ");
+                    phone = in.nextLine();
+                    if(!phone.matches("\\d{3}-\\d{3}-\\d{4}")) {
+                        System.out.println("[Error]: Phone number must be in the format (xxx-xxx-xxxx).\n");
+                    } else {
+                        validPhone = true;
+                    }
+                } while(!validPhone);
+
+                boolean validBank = false;
+                String bank = "";
+                do {
+                    System.out.println("Enter the tenant's bank account number: ");
+                    bank = in.nextLine();
+                    if(bank.length() <= 5 || bank.length() > 10) {
+                        System.out.println("[Error]: Bank account number must be between 5 and 10 characters.\n");
+                    } else {
+                        validBank = true;
+                    }
+                } while(!validBank);
 
                  // insert into tenant table
                 int tenant_id = createTenantID(conn);
