@@ -1,38 +1,80 @@
-## NUMA CSE 241 Project Interface
-- [NUMA CSE 241 Project Interface](#numa-cse-241-project-interface)
-  - [Upcoming Changes:](#upcoming-changes)
-  - [Functionality:](#functionality)
-    - [Tenant Interface](#tenant-interface)
-    - [Property Manager Interface](#property-manager-interface)
+## NUMA Enterprises User Interface <!-- omit in toc -->
+
+##### [Author]: Timothy Lee <!-- omit in toc -->
+##### [Last Modified]: 2020-05-01
+##### [Description]: User interface for NUMA Enterprises, designed for the final project of CSE 241 - Database Systems.
+
+---
+
+### Table of Contents <!-- omit in toc -->
+
+- [Tenant Interface](#tenant-interface)
+- [Property Manager Interface](#property-manager-interface)
+- [NUMA Manager Interface](#numa-manager-interface)
+
+---
+
+### Functionality & Specifications:
+
+This program is designed to support a total of 3 user interfaces:
+- Tenant Interface
+- Property Manager Interface
+- NUMA Manager Interface
+
+The program is designed to handle any and all exceptions, along with providing meanful error messages to our users.  
+
+The NUMA Database currently contains a total of 5 Properties, with a range of 8-15 Apartments per Property.
+
+Below will detail the exact functionality of each user interface and how to interact with it.
+
+---
+
+## Tenant Interface
+
+    - Login to the Tenant Interface by selecting it on the main menu, then entering a valid Tenant ID.
+    - Valid ID's: [1-29] - ID's 5 and 9 have made payments, ID 1 has a partial payment with a remaining balance.
+  
+    - Upon a successful login, the user will be able to choose from a list of actions to perform:
+        1. Make a payment on rent.
+        2. View payment history.
+        3. View amenities offered at their property.
+        4. Add roommates.
+        5. Update personal information.
 
 
-&nbsp;
+##  Property Manager Interface
 
-### Upcoming Changes:
-- changing payment method has to be different than adding a payment method
-- move out functionality (on_delete cascade, move for property manager)
-- build out numa manager interface
+    - No login is required for the Property Manager Interface. 
+
+    - Upon entering the interface, the user will be able to choose from a list of actions to perform:
+        1. View all property listings in the database.
+        2. View all apartments available for rent.
+        3. Record a visit by a prospective tenant.
+        4. Move in a new tenant to an apartment.
+        5. Move a tenant out from their apartment.
+
+    - Notes:
+        - Tenants can only be moved into available apartments. (Tip: Action 2, then Action 4)
+        - Once a tenant is moved out, that apartment is immediately available for rent.
+   
+
+## NUMA Manager Interface
+
+    - No login is required for the NUMA Manager Interface.
+
+    - Upon entering the interface, the user will be able to choose from a list of actions to perform:
+        1. Add a new property to the database.
+        2. Add amenities to an existing property.
+        3. Raise rent on a specified apartment.
+
+    - Notes:
+        - Adding a new property will also add the specified number of apartments.
+        - Apartment specifications are randomized between 1-3 Beds, 1-2.5 Baths, and 700-1400 Sq. Ft.
+        - A property can only contain the following amenities: [Pool, Gym, Laundry, Parking, Lounge, Garden]
 
 
-### Functionality:
-
-#### Tenant Interface
-- Login using a tenant_id of any integer (1-8)
-- Interface Notes:
-  - Every tenant is currently assigned to a lease for an apartment
-  - Tenants have the following functionality: 
-    - Make payments on their lease (working)
-    - Add roommates to their apartment (working)
-    - Cancel/move out of their apartment (partially working)
-    - View all amenities their apartment/property (working)
-
-####  Property Manager Interface
-- ADD LOGIN FUNCTIONALITY
-- Property Manager Interface offers the following functionality:
-  1. View all properties
-  2. View all apartments for rent in the aera
-  3. Record a visit by a prospective tenant
-  4. Sign a lease and move-in a tenant
-  5. [WIP]: Move-out a tenant
 
 
+
+
+- payment balance should be 0 after updated...
