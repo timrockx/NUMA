@@ -1,7 +1,7 @@
 ## NUMA Enterprises User Interface <!-- omit in toc -->
 
 ##### [Author]: Timothy Lee <!-- omit in toc -->
-##### [Last Modified]: 2020-05-01
+##### [Last Modified]: 2020-05-06
 ##### [Description]: User interface for NUMA Enterprises, designed for the final project of CSE 241 - Database Systems.
 
 ---
