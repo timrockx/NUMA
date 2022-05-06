@@ -27,6 +27,36 @@ The NUMA Database currently contains a total of 5 Properties, with a range of 8-
 
 Below will detail the exact functionality of each user interface and how to interact with it.
 
+File Structure: 
+
+    I have already compiled the code in Sunlab, however you can choose to do so again.
+    CD into [tyl224] directory, and run [javac *.java]. Then run [mv *.class ../tyl224exec].
+    CD into the [tyl224exec] directory, and generate the jar file with [jar cfmv tyl224.jar Manifest.txt Connect.class Manager.class Tenant.class numaManager.class].
+
+    Run project by cd into [tyl224exec] directory, and run [java -jar tyl224.jar].
+
+📦tyl224lee
+ ┣ 📂.vscode
+ ┃ ┗ 📜settings.json
+ ┣ 📂tyl224
+ ┃ ┣ 📜Connect.java
+ ┃ ┣ 📜Manager.java
+ ┃ ┣ 📜Tenant.java
+ ┃ ┗ 📜numaManager.java
+ ┣ 📂tyl224exec
+ ┃ ┣ 📜Connect.class
+ ┃ ┣ 📜Manager.class
+ ┃ ┣ 📜Manifest.txt
+ ┃ ┣ 📜Tenant.class
+ ┃ ┣ 📜numaManager.class
+ ┃ ┣ 📜ojdbc8.jar
+ ┃ ┗ 📜tyl224.jar
+ ┣ 📜.DS_Store
+ ┣ 📜.Rhistory
+ ┣ 📜.gitignore
+ ┣ 📜CSE241_ProjectDocs.pdf
+ ┗ 📜README.MD
+
 ---
 
 ## Tenant Interface
