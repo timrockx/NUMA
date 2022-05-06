@@ -32,7 +32,7 @@ Below will detail the exact functionality of each user interface and how to inte
 ## Tenant Interface
 
     - Login to the Tenant Interface by selecting it on the main menu, then entering a valid Tenant ID.
-    - Valid ID's: [1-29] - ID's 5 and 9 have made payments, ID 1 has a partial payment with a remaining balance.
+    - Valid ID's: [1-29 EXCLUDING 21 and 22]. When adding a new tenant, login with 29 + 1 (incrementally increasing from max.)
   
     - Upon a successful login, the user will be able to choose from a list of actions to perform:
         1. Make a payment on rent.
@@ -40,6 +40,11 @@ Below will detail the exact functionality of each user interface and how to inte
         3. View amenities offered at their property.
         4. Add roommates.
         5. Update personal information.
+
+    - Notes:
+      - Tenants [1-5] have all made complete payments on their rent. (0 remaining balance)
+      - Tenants [6-10] have made partial payments on their rent.
+      - Tenants [10-29, excluding 21 and 22] have not made any payments on rent, but have payment info on record.
 
 
 ##  Property Manager Interface
@@ -72,9 +77,3 @@ Below will detail the exact functionality of each user interface and how to inte
         - Apartment specifications are randomized between 1-3 Beds, 1-2.5 Baths, and 700-1400 Sq. Ft.
         - A property can only contain the following amenities: [Pool, Gym, Laundry, Parking, Lounge, Garden]
 
-
-
-
-
-
-- payment balance should be 0 after updated...
