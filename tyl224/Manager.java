@@ -11,6 +11,9 @@ public class Manager {
             try {
                 System.out.print("\033\143");
                 System.out.println("Welcome to the NUMA Property Manager Interface!\n");
+
+                int p_id = loginPropManager(conn);
+                if(p_id == -1) break;
                 
                 int choice;
                 do {
@@ -165,6 +168,66 @@ public class Manager {
             }
         } while (conn == null);
 
+    }
+
+    // login in for property manager
+    public static int loginPropManager(Connection conn) {
+        Scanner in = new Scanner(System.in);
+        System.out.println("\n-----Login for Property Manager----- (See README for Login Help)\n");
+        boolean validLogin = false;
+        int pID = -1;
+        try {
+            PreparedStatement pStmt = null;
+            ResultSet rs = null;
+
+            // get all prop manager ids
+            String idQuery = "select id from loginInfo where interface = 'propManager'";
+            pStmt = conn.prepareStatement(idQuery);
+            rs = pStmt.executeQuery();
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int colCount = rsmd.getColumnCount();
+
+            // store all tenant ids into an arraylist
+            ArrayList<String> idList = new ArrayList<String>(colCount);
+            while(rs.next()) {
+                int i = 1;
+                while(i <= colCount) {
+                    idList.add(rs.getString(i++));
+                }
+            }
+            pStmt.close();
+            rs.close();
+
+            do {
+                System.out.println("Enter your Property Manager ID: (-1 to Quit) ");
+                pID = Integer.parseInt(in.nextLine());
+                if(pID == -1) {
+                    System.out.println("\n[Exiting]: Returning to Main Interface.\n");
+                    return -1;
+                }
+
+                if(idList.contains(Integer.toString(pID))) {
+                    validLogin = true;
+                    return pID;
+                } else {
+                    System.out.println("[Error]: Invalid ID. Please try again.\n");
+                }
+
+            } while(!validLogin);
+            
+            return pID;
+        } 
+        catch (SQLException sqle) {
+            System.out.println("[Error]: Database error. Please try again.");
+            sqle.printStackTrace();
+        }
+        catch (NumberFormatException exp) {
+            System.out.println("[Error]: Invalid input. Please try again.");
+        }
+        catch (Exception e) {
+            System.out.println("[Error]: Undefined error. Please try again.");
+        }
+        return pID;
     }
 
     // create new tenant ID for a new tenant

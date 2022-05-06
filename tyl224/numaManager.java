@@ -11,6 +11,9 @@ public class numaManager {
                 System.out.print("\033\143");
                 System.out.println("Welcome to the NUMA Manager Interface!\n");
 
+                int nID = loginNumaManager(conn);
+                if(nID == -1) break;
+
                 int choice;
                 do {
                     // menu options
@@ -68,6 +71,66 @@ public class numaManager {
 
     }
 
+    // login numa manager
+  // login in for property manager
+  public static int loginNumaManager(Connection conn) {
+    Scanner in = new Scanner(System.in);
+    System.out.println("\n-----Login for NUMA Manager----- (See README for Login Help)\n");
+    boolean validLogin = false;
+    int nID = -1;
+    try {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+
+        // get all prop manager ids
+        String idQuery = "select id from loginInfo where interface = 'numaManager'";
+        pStmt = conn.prepareStatement(idQuery);
+        rs = pStmt.executeQuery();
+        ResultSetMetaData rsmd = rs.getMetaData();
+        int colCount = rsmd.getColumnCount();
+
+        // store all tenant ids into an arraylist
+        ArrayList<String> idList = new ArrayList<String>(colCount);
+        while(rs.next()) {
+            int i = 1;
+            while(i <= colCount) {
+                idList.add(rs.getString(i++));
+            }
+        }
+        pStmt.close();
+        rs.close();
+
+        do {
+            System.out.println("Enter your Property Manager ID: (-1 to Quit) ");
+            nID = Integer.parseInt(in.nextLine());
+            if(nID == -1) {
+                System.out.println("\n[Exiting]: Returning to Main Interface.\n");
+                return -1;
+            }
+
+            if(idList.contains(Integer.toString(nID))) {
+                validLogin = true;
+                return nID;
+            } else {
+                System.out.println("[Error]: Invalid ID. Please try again.\n");
+            }
+
+        } while(!validLogin);
+
+        return nID;
+    } 
+    catch (SQLException sqle) {
+        System.out.println("[Error]: Database error. Please try again.");
+        sqle.printStackTrace();
+    }
+    catch (NumberFormatException exp) {
+        System.out.println("[Error]: Invalid input. Please try again.");
+    }
+    catch (Exception e) {
+        System.out.println("[Error]: Undefined error. Please try again.");
+    }
+    return nID;
+}
 
     // add a new property to the database
     public static void addProperty(Connection conn) {

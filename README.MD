@@ -79,7 +79,7 @@ File Structure:
 
 ##  Property Manager Interface
 
-    - No login is required for the Property Manager Interface. 
+    - Only 1 ID is Valid for the Property Manager Interface. [4].
 
     - Upon entering the interface, the user will be able to choose from a list of actions to perform:
         1. View all property listings in the database.
@@ -95,7 +95,7 @@ File Structure:
 
 ## NUMA Manager Interface
 
-    - No login is required for the NUMA Manager Interface.
+    - Only 1 ID is Valid for the NUMA Manager Interface. [7].
 
     - Upon entering the interface, the user will be able to choose from a list of actions to perform:
         1. Add a new property to the database.
